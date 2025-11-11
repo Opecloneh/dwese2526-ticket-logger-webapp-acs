@@ -48,11 +48,6 @@
             </div>
 
             <div class="mb-3">
-                <label for="passwordExpiresAt" class="form-label" th:text="#{msg.user-form.label.passwordExpiresAt}">Expira contraseña:</label>
-                <input type="datetime-local" th:field="*{passwordExpiresAt}" id="passwordExpiresAt" class="form-control"/>
-            </div>
-
-            <div class="mb-3">
                 <label for="failedLoginAttempts" class="form-label" th:text="#{msg.user-form.label.failedLoginAttempts}">Intentos fallidos:</label>
                 <input type="number" th:field="*{failedLoginAttempts}" id="failedLoginAttempts" class="form-control" min="0"/>
             </div>
@@ -101,11 +96,6 @@
             <div class="mb-3">
                 <label for="lastPasswordChange" class="form-label" th:text="#{msg.user-form.label.lastPasswordChange}">Último cambio de contraseña:</label>
                 <input type="datetime-local" th:field="*{lastPasswordChange}" id="lastPasswordChange" class="form-control"/>
-            </div>
-
-            <div class="mb-3">
-                <label for="passwordExpiresAt" class="form-label" th:text="#{msg.user-form.label.passwordExpiresAt}">Expira contraseña:</label>
-                <input type="datetime-local" th:field="*{passwordExpiresAt}" id="passwordExpiresAt" class="form-control"/>
             </div>
 
             <div class="mb-3">

@@ -1,4 +1,5 @@
 package org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.controllers;
+
 import jakarta.validation.Valid;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.daos.RegionDAO;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.Region;
@@ -12,31 +13,45 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Controlador Spring MVC para gestionar operaciones CRUD sobre regiones.
+ * Proporciona métodos para listar, insertar, actualizar y eliminar regiones.
+ */
 @Controller
 @RequestMapping("/regions")
 public class RegionController {
+
     private static final Logger logger = LoggerFactory.getLogger(RegionController.class);
 
-    //DAO para gestionar las operaciones de las regiones en la base de datos
+    /**
+     * DAO para acceder a los datos de las regiones en la base de datos.
+     */
     @Autowired
     private RegionDAO regionDAO;
 
+    /**
+     * Fuente de mensajes internacionalizados.
+     */
     @Autowired
     private MessageSource messageSource;
 
+    /**
+     * Muestra la lista de todas las regiones.
+     *
+     * @param model Modelo de Spring para pasar datos a la vista.
+     * @return Nombre de la vista que renderiza la lista de regiones.
+     */
     @GetMapping
     public String listRegions(Model model) {
         logger.info("Solicitando la lista de todas las regiones...");
         List<Region> listRegions = null;
-        try{
+        try {
             listRegions = regionDAO.listAllRegions();
             logger.info("Se han cargado {} regiones.", listRegions.size());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Error al listar las regiones: {}", e.getMessage());
             model.addAttribute("errorMessage", "Error al listar las regiones.");
         }
@@ -44,6 +59,12 @@ public class RegionController {
         return "views/region/region-list";
     }
 
+    /**
+     * Muestra el formulario para crear una nueva región.
+     *
+     * @param model Modelo de Spring para pasar datos a la vista.
+     * @return Nombre de la vista con el formulario de nueva región.
+     */
     @GetMapping("/new")
     public String showNewForm(Model model) {
         logger.info("Mostrando formulario para nueva region.");
@@ -55,15 +76,18 @@ public class RegionController {
      * Inserta una nueva región en la base de datos.
      *
      * @param region              Objeto que contiene los datos del formulario.
+     * @param result              Resultados de validación del formulario.
      * @param redirectAttributes  Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de regiones.
+     * @param locale              Localización para mensajes internacionalizados.
+     * @return Redirección a la lista de regiones o al formulario si hay errores.
      */
     @PostMapping("/insert")
-    public String insertRegion(@Valid @ModelAttribute("region") Region region, BindingResult result, RedirectAttributes redirectAttributes, Locale locale) {
+    public String insertRegion(@Valid @ModelAttribute("region") Region region, BindingResult result,
+                               RedirectAttributes redirectAttributes, Locale locale) {
         logger.info("Insertando nueva región con código {}", region.getCode());
         try {
             if (result.hasErrors()) {
-                return "region-form";  // Devuelve el formulario para mostrar los errores de validación
+                return "region-form";
             }
             if (regionDAO.existRegionByCode(region.getCode())) {
                 logger.warn("El código de la región {} ya existe.", region.getCode());
@@ -78,23 +102,25 @@ public class RegionController {
             String errorMessage = messageSource.getMessage("msg.region-controller.insert.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
         }
-        return "redirect:/regions"; // Redirigir a la lista de regiones
+        return "redirect:/regions";
     }
-
 
     /**
      * Actualiza una región existente en la base de datos.
      *
      * @param region              Objeto que contiene los datos del formulario.
+     * @param result              Resultados de validación del formulario.
      * @param redirectAttributes  Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de regiones.
+     * @param locale              Localización para mensajes internacionalizados.
+     * @return Redirección a la lista de regiones o al formulario si hay errores.
      */
     @PostMapping("/update")
-    public String updateRegion(@Valid @ModelAttribute("region") Region region, BindingResult result, RedirectAttributes redirectAttributes, Locale locale) {
+    public String updateRegion(@Valid @ModelAttribute("region") Region region, BindingResult result,
+                               RedirectAttributes redirectAttributes, Locale locale) {
         logger.info("Actualizando región con ID {}", region.getId());
         try {
             if (result.hasErrors()) {
-                return "region-form";  // Devuelve el formulario para mostrar los errores de validación
+                return "region-form";
             }
             if (regionDAO.existRegionByCodeAndNotId(region.getCode(), region.getId())) {
                 logger.warn("El código de la región {} ya existe para otra región.", region.getCode());
@@ -109,10 +135,16 @@ public class RegionController {
             String errorMessage = messageSource.getMessage("msg.region-controller.update.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
         }
-        return "redirect:/regions"; // Redirigir a la lista de regiones
+        return "redirect:/regions";
     }
 
-
+    /**
+     * Elimina una región por su ID.
+     *
+     * @param id                 ID de la región a eliminar.
+     * @param redirectAttributes Atributos para mensajes flash de redirección.
+     * @return Redirección a la lista de regiones.
+     */
     @PostMapping("/delete")
     public String deleteRegion(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
         logger.info("Eliminando region con ID {}", id);
@@ -126,13 +158,20 @@ public class RegionController {
         return "redirect:/regions";
     }
 
+    /**
+     * Muestra el formulario de edición para una región existente.
+     *
+     * @param id    ID de la región a editar.
+     * @param model Modelo de Spring para pasar datos a la vista.
+     * @return Nombre de la vista con el formulario de edición de región.
+     */
     @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id")Long id, Model model) {
+    public String showEditForm(@RequestParam("id") Long id, Model model) {
         logger.info("Mostrando formulario de edicion para la region con ID {}", id);
         Region region = null;
-        try{
+        try {
             region = regionDAO.getRegionById(id);
-            if (region==null) {
+            if (region == null) {
                 logger.warn("No se encontro la region con ID{}", id);
             }
         } catch (Exception e) {
