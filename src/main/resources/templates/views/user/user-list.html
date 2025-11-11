@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/head :: head ('Ticket Logger - Usuarios')"></head>
+
+<body class="d-flex flex-column h-100">
+
+<!-- Header -->
+<header th:replace="fragments/header :: header"></header>
+
+<!-- Contenido dinámico -->
+<main class="list-page">
+    <div class="list-card">
+
+        <h1 th:text="#{msg.user-list.tittle}">Lista de Usuarios</h1>
+
+        <a th:href="@{/users/new}" class="btn btn-success" th:text="#{msg.user-list.button.add}">
+            Añadir Usuario
+        </a>
+
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+        <div class="table-responsive">
+        <table class="table table-bordered table-striped mt-3">
+            <thead>
+            <tr>
+                <th th:text="#{msg.user-list.table.id}">ID</th>
+                <th th:text="#{msg.user-list.table.username}">Nombre de usuario</th>
+                <th th:text="#{msg.user-list.table.active}">Activo</th>
+                <th th:text="#{msg.user-list.table.accountNonLocked}">Cuenta desbloqueada</th>
+                <th th:text="#{msg.user-list.table.lastPasswordChange}">Último cambio contraseña</th>
+                <th th:text="#{msg.user-list.table.passwordExpiresAt}">Expira contraseña</th>
+                <th th:text="#{msg.user-list.table.failedLoginAttempts}">Intentos fallidos</th>
+                <th th:text="#{msg.user-list.table.emailVerified}">Email verificado</th>
+                <th th:text="#{msg.user-list.table.mustChangePassword}">Debe cambiar contraseña</th>
+                <th th:text="#{msg.user-list.table.actions}">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="user : ${listUsers}">
+                <td th:text="${user.id}"></td>
+                <td th:text="${user.username}"></td>
+                <td th:text="${user.active} ? 'Sí' : 'No'"></td>
+                <td th:text="${user.accountNonLocked} ? 'Sí' : 'No'"></td>
+                <td th:text="${#temporals.format(user.lastPasswordChange, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${#temporals.format(user.passwordExpiresAt, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${user.failedLoginAttempts}"></td>
+                <td th:text="${user.emailVerified} ? 'Sí' : 'No'"></td>
+                <td th:text="${user.mustChangePassword} ? 'Sí' : 'No'"></td>
+                <td>
+                    <a th:href="@{/users/edit(id=${user.id})}" class="btn btn-primary btn-sm"
+                       th:text="#{msg.user-list.button.edit}">Editar</a>
+
+                    <form th:action="@{/users/delete}" method="post" class="d-inline">
+                        <input type="hidden" name="id" th:value="${user.id}"/>
+                        <button type="submit" class="btn btn-danger btn-sm"
+                                th:onclick="|return confirm('#{msg.user-list.confirm.delete}');|"
+                                th:text="#{msg.user-list.button.delete}">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+            </div>
+
+        <a th:href="@{/}" class="btn btn-secondary" th:text="#{msg.user-list.button.back}">
+            Volver al inicio
+        </a>
+
+    </div>
+</main>
+
+<!-- Footer -->
+<footer th:replace="fragments/footer :: footer"></footer>
+<div th:replace="fragments/scripts :: scripts"></div>
+
+</body>
+</html>

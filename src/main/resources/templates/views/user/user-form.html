@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/head :: head ('Ticket Logger - Usuarios')"></head>
+
+<body class="d-flex flex-column h-100">
+
+<header th:replace="fragments/header :: header"></header>
+
+<main class="form-page">
+    <div class="form-card">
+
+        <!-- Título -->
+        <h1 th:if="${user.id == null}" th:text="#{msg.user-form.title.create}">Crear Usuario</h1>
+        <h1 th:unless="${user.id == null}" th:text="#{msg.user-form.title.edit}">Editar Usuario</h1>
+
+        <!-- Mensaje de error -->
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <!-- Formulario de creación -->
+        <form th:if="${user.id == null}" th:action="@{/users/insert}" th:object="${user}" method="post" class="mt-3">
+            <input type="hidden" th:field="*{id}"/>
+
+            <div class="mb-3">
+                <label for="username" class="form-label" th:text="#{msg.user-form.label.username}">Nombre de usuario:</label>
+                <input type="text" th:field="*{username}" id="username" class="form-control"/>
+                <div th:if="${#fields.hasErrors('username')}" class="text-danger" th:errors="*{username}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="passwordHash" class="form-label" th:text="#{msg.user-form.label.password}">Contraseña:</label>
+                <input type="password" th:field="*{passwordHash}" id="passwordHash" class="form-control"/>
+                <div th:if="${#fields.hasErrors('passwordHash')}" class="text-danger" th:errors="*{passwordHash}"></div>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" th:field="*{active}" id="active" class="form-check-input"/>
+                <label for="active" class="form-check-label" th:text="#{msg.user-form.label.active}">Activo</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" th:field="*{accountNonLocked}" id="accountNonLocked" class="form-check-input"/>
+                <label for="accountNonLocked" class="form-check-label" th:text="#{msg.user-form.label.accountNonLocked}">Cuenta desbloqueada</label>
+            </div>
+
+            <div class="mb-3">
+                <label for="lastPasswordChange" class="form-label" th:text="#{msg.user-form.label.lastPasswordChange}">Último cambio de contraseña:</label>
+                <input type="datetime-local" th:field="*{lastPasswordChange}" id="lastPasswordChange" class="form-control"/>
+            </div>
+
+            <div class="mb-3">
+                <label for="passwordExpiresAt" class="form-label" th:text="#{msg.user-form.label.passwordExpiresAt}">Expira contraseña:</label>
+                <input type="datetime-local" th:field="*{passwordExpiresAt}" id="passwordExpiresAt" class="form-control"/>
+            </div>
+
+            <div class="mb-3">
+                <label for="failedLoginAttempts" class="form-label" th:text="#{msg.user-form.label.failedLoginAttempts}">Intentos fallidos:</label>
+                <input type="number" th:field="*{failedLoginAttempts}" id="failedLoginAttempts" class="form-control" min="0"/>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" th:field="*{emailVerified}" id="emailVerified" class="form-check-input"/>
+                <label for="emailVerified" class="form-check-label" th:text="#{msg.user-form.label.emailVerified}">Email verificado</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" th:field="*{mustChangePassword}" id="mustChangePassword" class="form-check-input"/>
+                <label for="mustChangePassword" class="form-check-label" th:text="#{msg.user-form.label.mustChangePassword}">Debe cambiar contraseña</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" th:text="#{msg.user-form.button.create}">Crear</button>
+            <a th:href="@{/users}" class="btn btn-secondary" th:text="#{msg.user-form.button.back}">Volver al listado</a>
+        </form>
+
+        <!-- Formulario de edición -->
+        <form th:unless="${user.id == null}" th:action="@{/users/update}" th:object="${user}" method="post" class="mt-3">
+            <input type="hidden" th:field="*{id}"/>
+
+            <!-- Reutilizamos los mismos campos que en creación -->
+            <div class="mb-3">
+                <label for="username" class="form-label" th:text="#{msg.user-form.label.username}">Nombre de usuario:</label>
+                <input type="text" th:field="*{username}" id="username" class="form-control"/>
+                <div th:if="${#fields.hasErrors('username')}" class="text-danger" th:errors="*{username}"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="passwordHash" class="form-label" th:text="#{msg.user-form.label.password}">Contraseña:</label>
+                <input type="password" th:field="*{passwordHash}" id="passwordHash" class="form-control"/>
+                <div th:if="${#fields.hasErrors('passwordHash')}" class="text-danger" th:errors="*{passwordHash}"></div>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" th:field="*{active}" id="active" class="form-check-input"/>
+                <label for="active" class="form-check-label" th:text="#{msg.user-form.label.active}">Activo</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" th:field="*{accountNonLocked}" id="accountNonLocked" class="form-check-input"/>
+                <label for="accountNonLocked" class="form-check-label" th:text="#{msg.user-form.label.accountNonLocked}">Cuenta desbloqueada</label>
+            </div>
+
+            <div class="mb-3">
+                <label for="lastPasswordChange" class="form-label" th:text="#{msg.user-form.label.lastPasswordChange}">Último cambio de contraseña:</label>
+                <input type="datetime-local" th:field="*{lastPasswordChange}" id="lastPasswordChange" class="form-control"/>
+            </div>
+
+            <div class="mb-3">
+                <label for="passwordExpiresAt" class="form-label" th:text="#{msg.user-form.label.passwordExpiresAt}">Expira contraseña:</label>
+                <input type="datetime-local" th:field="*{passwordExpiresAt}" id="passwordExpiresAt" class="form-control"/>
+            </div>
+
+            <div class="mb-3">
+                <label for="failedLoginAttempts" class="form-label" th:text="#{msg.user-form.label.failedLoginAttempts}">Intentos fallidos:</label>
+                <input type="number" th:field="*{failedLoginAttempts}" id="failedLoginAttempts" class="form-control" min="0"/>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" th:field="*{emailVerified}" id="emailVerified" class="form-check-input"/>
+                <label for="emailVerified" class="form-check-label" th:text="#{msg.user-form.label.emailVerified}">Email verificado</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input type="checkbox" th:field="*{mustChangePassword}" id="mustChangePassword" class="form-check-input"/>
+                <label for="mustChangePassword" class="form-check-label" th:text="#{msg.user-form.label.mustChangePassword}">Debe cambiar contraseña</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" th:text="#{msg.user-form.button.update}">Actualizar</button>
+            <a th:href="@{/users}" class="btn btn-secondary" th:text="#{msg.user-form.button.back}">Volver al listado</a>
+        </form>
+
+    </div>
+</main>
+
+<footer th:replace="fragments/footer :: footer"></footer>
+<div th:replace="fragments/scripts :: scripts"></div>
+
+</body>
+</html>
