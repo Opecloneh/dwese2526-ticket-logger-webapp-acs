@@ -1,5 +1,9 @@
 package org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.daos;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.Region;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,29 +19,21 @@ import java.util.List;
  * Proporciona operaciones CRUD sobre la entidad {@link User}.
  */
 @Repository
+@Transactional
 public class UserDAOImpl implements UserDAO {
 
     private static final Logger logger = LoggerFactory.getLogger(UserDAOImpl.class);
 
-    private final JdbcTemplate jdbcTemplate;
-
-    /**
-     * Constructor que recibe el {@link JdbcTemplate} inyectado por Spring.
-     *
-     * @param jdbcTemplate objeto JdbcTemplate para ejecutar consultas SQL.
-     */
-    public UserDAOImpl(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
-
+    @PersistenceContext
+    private EntityManager entityManager;
     /**
      * {@inheritDoc}
      */
     @Override
     public List<User> listAllUsers() throws SQLException {
         logger.info("Listando los usuarios de la base de datos.");
-        String sql = "SELECT * FROM users";
-        List<User> users = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class));
+        String hql = "SELECT u FROM User u";
+        List<User> users = entityManager.createQuery(hql, User.class).getResultList();
         logger.info("Recuperados {} usuarios de la base de datos.", users.size());
         return users;
     }
@@ -52,22 +48,8 @@ public class UserDAOImpl implements UserDAO {
         if (user.getLastPasswordChange() != null) {
             user.setPasswordExpiresAt(user.getLastPasswordChange().plusMonths(3));
         }
-
-        String sql = "INSERT INTO users (username, passwordHash, active, accountNonLocked, lastPasswordChange, " +
-                "passwordExpiresAt, failedLoginAttempts, emailVerified, mustChangePassword) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        int rowsAffected = jdbcTemplate.update(sql,
-                user.getUsername(),
-                user.getPasswordHash(),
-                user.isActive(),
-                user.isAccountNonLocked(),
-                user.getLastPasswordChange(),
-                user.getPasswordExpiresAt(),
-                user.getFailedLoginAttempts(),
-                user.isEmailVerified(),
-                user.isMustChangePassword()
-        );
-        logger.info("Usuario insertado. Filas afectadas: {}", rowsAffected);
+        entityManager.persist(user);
+        logger.info("Usuario con id {} insertado con exito", user.getId());
     }
 
     /**
@@ -80,23 +62,8 @@ public class UserDAOImpl implements UserDAO {
         if (user.getLastPasswordChange() != null) {
             user.setPasswordExpiresAt(user.getLastPasswordChange().plusMonths(3));
         }
-
-        String sql = "UPDATE users SET username = ?, passwordHash = ?, active = ?, accountNonLocked = ?, " +
-                "lastPasswordChange = ?, passwordExpiresAt = ?, failedLoginAttempts = ?, " +
-                "emailVerified = ?, mustChangePassword = ? WHERE id = ?";
-        int rowsAffected = jdbcTemplate.update(sql,
-                user.getUsername(),
-                user.getPasswordHash(),
-                user.isActive(),
-                user.isAccountNonLocked(),
-                user.getLastPasswordChange(),
-                user.getPasswordExpiresAt(),
-                user.getFailedLoginAttempts(),
-                user.isEmailVerified(),
-                user.isMustChangePassword(),
-                user.getId()
-        );
-        logger.info("Usuario actualizado. Filas afectadas: {}", rowsAffected);
+        entityManager.merge(user);
+        logger.info("Usuario con id {} actualizado", user.getId());
     }
 
     /**
@@ -105,9 +72,12 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public void deleteUser(Long id) throws SQLException {
         logger.info("Borrando usuario con id: {}", id);
-        String sql = "DELETE FROM users WHERE id = ?";
-        int rowsAffected = jdbcTemplate.update(sql, id);
-        logger.info("Usuario eliminado. Filas afectadas: {}", rowsAffected);
+        User user = entityManager.find(User.class, id);
+        if (user != null) {
+            entityManager.remove(user);
+            logger.info("Usuario eliminado con sesion: {}", id);
+        }
+        logger.info("Usuario con id {} eliminado", user.getId());
     }
 
     /**
@@ -116,15 +86,14 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public User getUserById(Long id) throws SQLException {
         logger.info("Recuperando usuario por id: {}", id);
-        String sql = "SELECT * FROM users WHERE id = ?";
-        try {
-            User user = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(User.class), id);
-            logger.info("Usuario recuperado: {} - {}", user.getId(), user.getUsername());
-            return user;
-        } catch (Exception e) {
-            logger.warn("No se encontró usuario con id: {}", id);
-            return null;
+        User user = entityManager.find(User.class, id);
+        if (user != null) {
+            logger.info("Usuario recuperada: {} - {}", id, user.getUsername());
         }
+        else {
+            logger.warn("Usuario con id {} no encontrado", id);
+        }
+        return user;
     }
 
     /**
@@ -133,8 +102,10 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public boolean existsUserByName(String username) throws SQLException {
         logger.info("Comprobando si el usuario con nombre '{}' existe", username);
-        String sql = "SELECT COUNT(*) FROM users WHERE UPPER(username) = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, username.toUpperCase());
+        String hql = "SELECT COUNT(u) FROM User u WHERE UPPER(u.username) = :username";
+        Long count = entityManager.createQuery(hql, Long.class)
+                .setParameter("username", username.toUpperCase())
+                .getSingleResult();
         boolean exists = count != null && count > 0;
         logger.info("Usuario con nombre '{}' existe: {}", username, exists);
         return exists;
@@ -146,10 +117,31 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public boolean existUserByNameAndNotId(String username, Long id) throws SQLException {
         logger.info("Comprobando si el usuario con nombre '{}' existe excluyendo la id: {}", username, id);
-        String sql = "SELECT COUNT(*) FROM users WHERE UPPER(username) = ? AND id != ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, username.toUpperCase(), id);
+        String hql = "SELECT COUNT(u) FROM User u WHERE UPPER(u.username) = :username AND id != :id";
+       Long count = entityManager.createQuery(hql, Long.class)
+               .setParameter("username", username.toUpperCase())
+               .setParameter("id", id)
+               .getSingleResult();
         boolean exists = count != null && count > 0;
         logger.info("Usuario con nombre '{}' existe excluyendo id {}: {}", username, id, exists);
         return exists;
+    }
+
+    public List<User> listUserPage(int page, int size) {
+        logger.info("Listing users page={}, size={} from the database.", page, size);
+
+        int offset = page * size;
+
+        String hql  = "SELECT u FROM User u ORDER BY u.username";
+        return entityManager.createQuery(hql, User.class)
+                .setFirstResult(offset)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public long countUsers() {
+        String hql = "SELECT COUNT(u) FROM User u";
+        Long total = entityManager.createQuery(hql, Long.class).getSingleResult();
+        return (total != null) ? total : 0L;
     }
 }

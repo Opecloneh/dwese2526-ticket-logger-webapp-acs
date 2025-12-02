@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/head :: head ('Ticket Logger - Users')"></head>
+
+<body class="d-flex flex-column h-100">
+
+<!-- Header -->
+<header th:replace="fragments/header :: header"></header>
+<main class="form-page">
+    <div class="form-card">
+        <!-- Titulo -->
+        <h1>
+            <span th:text="#{msg.user-detail.title}"></span>
+        </h1>
+        <!-- Datos del usuario -->
+        <div class="mt-3">
+            <h2 class="h5" th:text="#{msg.user-detail.section.userData}"></h2>
+            <dl class="row">
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.id}"></dt>
+                <dd class="col-sm-9" th:text="${user.id}"></dd>
+
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.username}"></dt>
+                <dd class="col-sm-9" th:text="${user.username}"></dd>
+
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.passwordHash}"></dt>
+                <dd class="col-sm-9" th:text="${user.passwordHash}"></dd>
+
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.active}"></dt>
+                <dd class="col-sm-9" th:text="${user.active}"></dd>
+
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.accountNonLocked}"></dt>
+                <dd class="col-sm-9" th:text="${user.accountNonLocked}"></dd>
+
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.emailVerified}"></dt>
+                <dd class="col-sm-9" th:text="${user.emailVerified}"></dd>
+
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.mustChangePassword}"></dt>
+                <dd class="col-sm-9" th:text="${user.mustChangePassword}"></dd>
+
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.lastPasswordChange}"></dt>
+                <dd class="col-sm-9" th:text="${user.lastPasswordChange}"></dd>
+
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.passwordExpiresAt}"></dt>
+                <dd class="col-sm-9" th:text="${user.passwordExpiresAt}"></dd>
+
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.failedLoginAttempts}"></dt>
+                <dd class="col-sm-9" th:text="${user.failedLoginAttempts}"></dd>
+            </dl>
+        </div>
+
+        <div class="mt-4">
+            <a class="btn btn-secondary" th:href="@{/users}" th:text="#{msg.user-detail.action.back}"></a>
+        </div>
+    </div>
+    </div>
+</main>
