@@ -45,6 +45,8 @@
             <div class="mb-3">
                 <label for="lastPasswordChange" class="form-label" th:text="#{msg.user-form.label.lastPasswordChange}">Último cambio de contraseña:</label>
                 <input type="datetime-local" th:field="*{lastPasswordChange}" id="lastPasswordChange" class="form-control"/>
+                <div th:if="${#fields.hasErrors('lastPasswordChange')}" class="text-danger" th:errors="*{lastPasswordChange}"></div>
+
             </div>
 
             <div class="mb-3">
@@ -96,6 +98,7 @@
             <div class="mb-3">
                 <label for="lastPasswordChange" class="form-label" th:text="#{msg.user-form.label.lastPasswordChange}">Último cambio de contraseña:</label>
                 <input type="datetime-local" th:field="*{lastPasswordChange}" id="lastPasswordChange" class="form-control"/>
+                <div th:if="${#fields.hasErrors('lastPasswordChange')}" class="text-danger" th:errors="*{lastPasswordChange}"></div>
             </div>
 
             <div class="mb-3">

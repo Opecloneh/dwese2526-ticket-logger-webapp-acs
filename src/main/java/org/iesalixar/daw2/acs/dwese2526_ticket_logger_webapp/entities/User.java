@@ -1,5 +1,8 @@
 package org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,36 +16,49 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity //Marca esta clase como una entidad gestionada por JPA
+@Table(name = "users") //Especifica el nombre de la tabla asosciada a esta entidad
 public class User {
 
     /** Identificador único del usuario. */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /** Nombre de usuario único para autenticación. */
+    @Column(name = "username", nullable = false, length = 50)
     private String username;
 
     /** Hash de la contraseña del usuario. */
+    @Column(name = "passwordHash", nullable = false, length = 50)
     private String passwordHash;
 
     /** Indica si la cuenta está activa. */
+    @Column(name = "active")
     private boolean active;
 
     /** Indica si la cuenta no está bloqueada. */
+    @Column(name = "accountNonLocked")
     private boolean accountNonLocked;
 
     /** Fecha y hora del último cambio de contraseña. */
+    @Column(name = "lastPasswordChange", nullable = false)
     private LocalDateTime lastPasswordChange;
 
     /** Fecha y hora en que expira la contraseña. */
+    @Column(name = "passwordExpiresAt", nullable = false)
     private LocalDateTime passwordExpiresAt;
 
     /** Número de intentos fallidos de inicio de sesión. */
+    @Column(name = "failedLoginAttempts", nullable = false)
     private int failedLoginAttempts;
 
     /** Indica si el email del usuario ha sido verificado. */
+    @Column(name = "emailVerified")
     private boolean emailVerified;
 
     /** Indica si el usuario debe cambiar la contraseña en el próximo inicio de sesión. */
+    @Column(name = "mustChangePassword")
     private boolean mustChangePassword;
 
     /**

@@ -46,9 +46,16 @@
                 <td th:text="${user.emailVerified} ? 'Sí' : 'No'"></td>
                 <td th:text="${user.mustChangePassword} ? 'Sí' : 'No'"></td>
                 <td>
+                    <!-- Botón Ver detalle -->
+                    <a th:href="@{/users/detail(id=${user.id})}"
+                       class="btn btn-outline-secondary btn-sm me-1"
+                       th:text="#{msg.user-list.viewDetail}">Ver Detalle</a>
+
+                    <!-- Botón Editar -->
                     <a th:href="@{/users/edit(id=${user.id})}" class="btn btn-primary btn-sm"
                        th:text="#{msg.user-list.button.edit}">Editar</a>
 
+                    <!-- Botón Eliminar -->
                     <form th:action="@{/users/delete}" method="post" class="d-inline">
                         <input type="hidden" name="id" th:value="${user.id}"/>
                         <button type="submit" class="btn btn-danger btn-sm"
@@ -56,14 +63,64 @@
                                 th:text="#{msg.user-list.button.delete}">Eliminar</button>
                     </form>
                 </td>
+
             </tr>
             </tbody>
         </table>
             </div>
-
         <a th:href="@{/}" class="btn btn-secondary" th:text="#{msg.user-list.button.back}">
             Volver al inicio
         </a>
+        <!-- Paginación -->
+        <div class="d-flex justify-content-between align-items-center mt-3"
+             th:if="${totalPages > 0}">
+
+
+            <!-- Info de página -->
+            <div>
+                <!-- "Página X de Y (N registros en total)" -->
+                <span th:text="#{msg.pagination.info(${currentPage} + 1, ${totalPages}, ${totalElements})}"></span>
+            </div>
+
+
+            <!-- Controles de paginación -->
+            <nav th:aria-label="#{msg.pagination.aria.label}">
+                <ul class="pagination mb-0">
+
+
+                    <!-- Botón Anterior -->
+                    <li class="page-item"
+                        th:classappend="${currentPage == 0} ? ' disabled'">
+                        <a class="page-link"
+                           th:href="@{/users(page=${currentPage - 1}, size=${pageSize})}"
+                           th:aria-label="#{msg.pagination.prev}">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+
+
+                    <!-- Números de página -->
+                    <li class="page-item"
+                        th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                        th:classappend="${i} == ${currentPage} ? ' active'">
+                        <a class="page-link"
+                           th:text="${i + 1}"
+                           th:href="@{/regions(page=${i}, size=${pageSize})}"></a>
+                    </li>
+
+
+                    <!-- Botón Siguiente -->
+                    <li class="page-item"
+                        th:classappend="${currentPage == totalPages - 1} ? ' disabled'">
+                        <a class="page-link"
+                           th:href="@{/regions(page=${currentPage + 1}, size=${pageSize})}"
+                           th:aria-label="#{msg.pagination.next}">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
 
     </div>
 </main>
