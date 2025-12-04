@@ -3,6 +3,7 @@ package org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.mappers;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.dtos.*;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.Region;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.User;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.UserProfile;
 
 import java.util.List;
 
@@ -12,10 +13,10 @@ public class UserMapper {
         if (entity == null) return null;
         UserDTO dto = new UserDTO();
         dto.setId(entity.getId());
-        dto.setActive(entity.isActive());
-        dto.setUsername(entity.getUsername());
+        dto.setEmail(entity.getEmail());
+        dto.setActive(entity.getActive());
         dto.setEmailVerified(entity.isEmailVerified());
-        dto.setAccountNonLocked(entity.isAccountNonLocked());
+        dto.setAccountNonLocked(entity.getAccountNonLocked());
         dto.setFailedLoginAttempts(entity.getFailedLoginAttempts());
         dto.setLastPasswordChange(entity.getLastPasswordChange());
         dto.setMustChangePassword(entity.isMustChangePassword());
@@ -32,10 +33,10 @@ public class UserMapper {
         if (entity == null) return null;
         UserUpdateDTO dto = new UserUpdateDTO();
         dto.setId(entity.getId());
-        dto.setActive(entity.isActive());
-        dto.setUsername(entity.getUsername());
+        dto.setEmail(entity.getEmail());
+        dto.setActive(entity.getActive());
         dto.setEmailVerified(entity.isEmailVerified());
-        dto.setAccountNonLocked(entity.isAccountNonLocked());
+        dto.setAccountNonLocked(entity.getAccountNonLocked());
         dto.setFailedLoginAttempts(entity.getFailedLoginAttempts());
         dto.setLastPasswordChange(entity.getLastPasswordChange());
         dto.setMustChangePassword(entity.isMustChangePassword());
@@ -48,7 +49,7 @@ public class UserMapper {
         User u = new User();
         u.setId(dto.getId());
         u.setActive(dto.isActive());
-        u.setUsername(dto.getUsername());
+        u.setEmail(dto.getEmail());
         u.setEmailVerified(dto.isEmailVerified());
         u.setAccountNonLocked(dto.isAccountNonLocked());
         u.setFailedLoginAttempts(dto.getFailedLoginAttempts());
@@ -61,7 +62,7 @@ public class UserMapper {
     public static void copyToExistingEntity(UserUpdateDTO dto, User entity){
         if (dto == null || entity == null) return;
         entity.setActive(dto.isActive());
-        entity.setUsername(dto.getUsername());
+        entity.setEmail(dto.getEmail());
         entity.setEmailVerified(dto.isEmailVerified());
         entity.setAccountNonLocked(dto.isAccountNonLocked());
         entity.setFailedLoginAttempts(dto.getFailedLoginAttempts());
@@ -74,17 +75,28 @@ public class UserMapper {
         if (entity == null) return null;
 
         UserDetailDTO dto = new UserDetailDTO();
-        dto.setUsername(entity.getUsername());
+        dto.setEmail(entity.getEmail());
         dto.setId(entity.getId());
-        dto.setUsername(entity.getUsername());
         dto.setPasswordHash(entity.getPasswordHash());
-        dto.setActive(entity.isActive());
-        dto.setAccountNonLocked(entity.isAccountNonLocked());
+        dto.setActive(entity.getActive());
+        dto.setAccountNonLocked(entity.getAccountNonLocked());
         dto.setLastPasswordChange(entity.getLastPasswordChange());
         dto.setPasswordExpiresAt(entity.getPasswordExpiresAt());
         dto.setFailedLoginAttempts(entity.getFailedLoginAttempts());
         dto.setEmailVerified(entity.isEmailVerified());
         dto.setMustChangePassword(entity.isMustChangePassword());
+
+        //Cargar datos del perfil si existe
+        UserProfile profile = entity.getProfile();
+
+        if (profile != null) {
+            dto.setFirstName(profile.getFirstName());
+            dto.setLastName(profile.getLastName());
+            dto.setPhoneNumber(profile.getPhoneNumber());
+            dto.setProfileImage(profile.getProfileImage());
+            dto.setBio(profile.getBio());
+            dto.setLocale(profile.getLocale());
+        }
 
         return dto;
     }

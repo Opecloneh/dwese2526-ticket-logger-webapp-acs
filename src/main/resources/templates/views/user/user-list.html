@@ -23,7 +23,7 @@
             <thead>
             <tr>
                 <th th:text="#{msg.user-list.table.id}">ID</th>
-                <th th:text="#{msg.user-list.table.username}">Nombre de usuario</th>
+                <th th:text="#{msg.user-list.table.email}">Email</th>
                 <th th:text="#{msg.user-list.table.active}">Activo</th>
                 <th th:text="#{msg.user-list.table.accountNonLocked}">Cuenta desbloqueada</th>
                 <th th:text="#{msg.user-list.table.lastPasswordChange}">Último cambio contraseña</th>
@@ -37,7 +37,7 @@
             <tbody>
             <tr th:each="user : ${listUsers}">
                 <td th:text="${user.id}"></td>
-                <td th:text="${user.username}"></td>
+                <td th:text="${user.email}"></td>
                 <td th:text="${user.active} ? 'Sí' : 'No'"></td>
                 <td th:text="${user.accountNonLocked} ? 'Sí' : 'No'"></td>
                 <td th:text="${#temporals.format(user.lastPasswordChange, 'yyyy-MM-dd HH:mm')}"></td>
@@ -105,7 +105,7 @@
                         th:classappend="${i} == ${currentPage} ? ' active'">
                         <a class="page-link"
                            th:text="${i + 1}"
-                           th:href="@{/regions(page=${i}, size=${pageSize})}"></a>
+                           th:href="@{/users(page=${i}, size=${pageSize})}"></a>
                     </li>
 
 
@@ -113,7 +113,7 @@
                     <li class="page-item"
                         th:classappend="${currentPage == totalPages - 1} ? ' disabled'">
                         <a class="page-link"
-                           th:href="@{/regions(page=${currentPage + 1}, size=${pageSize})}"
+                           th:href="@{/users(page=${currentPage + 1}, size=${pageSize})}"
                            th:aria-label="#{msg.pagination.next}">
                             <span aria-hidden="true">&raquo;</span>
                         </a>

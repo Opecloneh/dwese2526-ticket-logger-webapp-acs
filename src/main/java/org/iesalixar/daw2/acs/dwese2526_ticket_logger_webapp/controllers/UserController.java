@@ -52,36 +52,49 @@ public class UserController {
      * @return Nombre de la vista que renderiza la lista de usuarios.
      */
     @GetMapping
-    public String listUsers(@RequestParam(name = "page", defaultValue = "0") int page,
-                            @RequestParam(name="size", defaultValue = "10") int size,
-                            Model model,
-                            Locale locale) {
-        logger.info("Solicitando la lista de todas los usuarios... page={}, size={}", page, size);
+    public String listUsers(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortField", defaultValue = "id") String sortField,
+            @RequestParam(name = "sortDir", defaultValue = "asc") String sortDir,
+            Model model,
+            Locale locale) {
+
+        logger.info("Solicitando la lista de todos los usuarios... page={}, size={}, sortField={}, sortDir={}", page, size, sortField, sortDir);
+
         if (page < 0) page = 0;
         if (size < 0) size = 0;
+
         try {
             long totalElements = userDAO.countUsers();
             int totalPages = (int) Math.ceil((double) totalElements / size);
             if (totalPages > 0 && page >= totalPages) {
                 page = totalPages - 1;
             }
-            List<User> listUsers = userDAO.listUserPage(page, size);
+
+            // Pasar los nuevos parámetros al DAO
+            List<User> listUsers = userDAO.listUserPage(page, size, sortField, sortDir);
             List<UserDTO> listUsersDTO = UserMapper.toDTOList(listUsers);
-            logger.info("Se han cargado {} usuarios en la pagina {}.", listUsersDTO.size(), page);
+
+            logger.info("Se han cargado {} usuarios en la página {}.", listUsersDTO.size(), page);
+
             model.addAttribute("listUsers", listUsersDTO);
             model.addAttribute("currentPage", page);
             model.addAttribute("pageSize", size);
             model.addAttribute("totalPages", totalPages);
             model.addAttribute("totalElements", totalElements);
-        }
-        catch (Exception e) {
+            model.addAttribute("sortField", sortField);
+            model.addAttribute("sortDir", sortDir);
+
+        } catch (Exception e) {
             logger.error("Error al listar los usuarios: {}", e.getMessage());
             String errorMessage = messageSource.getMessage("msg.user-controller.list.error", null, locale);
-            model.addAttribute("errorMessage", "Error al listar los usuarios.");
+            model.addAttribute("errorMessage", errorMessage);
         }
-        return "views/user/user-list";
 
+        return "views/user/user-list";
     }
+
 
     /**
      * Muestra el formulario para crear un nuevo usuario.
@@ -117,24 +130,24 @@ public class UserController {
     @PostMapping("/insert")
     public String insertUser(@Valid @ModelAttribute("user") UserCreateDTO userDTO, BindingResult result,
                              RedirectAttributes redirectAttributes, Locale locale, Model model) {
-        logger.info("Insertando nuevo usuario con nombre {}", userDTO.getUsername());
+        logger.info("Insertando nuevo usuario con nombre {}", userDTO.getEmail());
         try {
             if (result.hasErrors()) {
                 List<User> listUsers = userDAO.listAllUsers();
                 model.addAttribute("listUsers", listUsers);
                 return "views/user/user-form";
             }
-            if (userDAO.existsUserByName(userDTO.getUsername())) {
-                logger.warn("El nombre de usuario {} ya existe.", userDTO.getUsername());
+            if (userDAO.existsUserByEmail(userDTO.getEmail())) {
+                logger.warn("El nombre de usuario {} ya existe.", userDTO.getEmail());
                 String errorMessage = messageSource.getMessage("msg.user-controller.insert.codeExist", null, locale);
                 redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
                 return "redirect:/users/new";
             }
             User user = UserMapper.toEntity(userDTO);
             userDAO.insertUser(user);
-            logger.info("Usuario {} insertado con éxito.", user.getUsername());
+            logger.info("Usuario {} insertado con éxito.", user.getEmail());
         } catch (Exception e) {
-            logger.error("Error al insertar el usuario {}: {}", userDTO.getUsername(), e.getMessage());
+            logger.error("Error al insertar el usuario {}: {}", userDTO.getEmail(), e.getMessage());
             String errorMessage = messageSource.getMessage("msg.user-controller.insert.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
         }
@@ -158,8 +171,8 @@ public class UserController {
             if (result.hasErrors()) {
                 return "views/user/user-form";
             }
-            if (userDAO.existUserByNameAndNotId(userDTO.getUsername(), userDTO.getId())) {
-                logger.warn("El nombre de usuario {} ya existe para otro usuario.", userDTO.getUsername());
+            if (userDAO.existUserByEmailAndNotId(userDTO.getEmail(), userDTO.getId())) {
+                logger.warn("El nombre de usuario {} ya existe para otro usuario.", userDTO.getEmail());
                 String errorMessage = messageSource.getMessage("msg.user-controller.update.codeExist", null, locale);
                 redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
                 return "redirect:/users/edit?id=" + userDTO.getId();

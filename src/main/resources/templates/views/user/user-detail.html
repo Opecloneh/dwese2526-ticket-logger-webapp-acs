@@ -20,8 +20,8 @@
                 <dt class="col-sm-3" th:text="#{msg.user-detail.field.id}"></dt>
                 <dd class="col-sm-9" th:text="${user.id}"></dd>
 
-                <dt class="col-sm-3" th:text="#{msg.user-detail.field.username}"></dt>
-                <dd class="col-sm-9" th:text="${user.username}"></dd>
+                <dt class="col-sm-3" th:text="#{msg.user-detail.field.email}"></dt>
+                <dd class="col-sm-9" th:text="${user.email}"></dd>
 
                 <dt class="col-sm-3" th:text="#{msg.user-detail.field.passwordHash}"></dt>
                 <dd class="col-sm-9" th:text="${user.passwordHash}"></dd>
@@ -48,6 +48,54 @@
                 <dd class="col-sm-9" th:text="${user.failedLoginAttempts}"></dd>
             </dl>
         </div>
+
+        <!-- SECCIÓN: Perfil de Usuario -->
+        <div class="mt-4">
+            <h2 class="h5" th:text="#{msg.user-detail.section.profileData}">Perfil del usuario</h2>
+
+            <!-- Si NO hay datos de perfil (todos los campos de perfil son null) -->
+            <div th:if="${user.firstName == null and user.lastName == null and
+            user.phoneNumber == null and user.profileImage == null
+            and user.bio == null and user.locale == null}" class="alert alert-info"
+                 th:text="#{msg.user-detail.profile.empty}">
+                Este usuario no tiene perfil asociado.
+            </div>
+
+            <!-- Si Sí hay algún dato de perfil -->
+            <div th:if="${user.firstName != null or user.lastName != null or user.phoneNumber != null or
+            user.profileImage != null or user.bio != null or user.locale != null}">
+                <dl class="row">
+                    <dt class="col-sm-3" th:text="#{msg.user-detail.profile.field.firstName}"></dt>
+                    <dd class="col-sm-9" th:text="${user.firstName}"></dd>
+
+                    <dt class="col-sm-3" th:text="#{msg.user-detail.profile.field.lastName}"></dt>
+                    <dd class="col-sm-9" th:text="${user.lastName}"></dd>
+
+                    <dt class="col-sm-3" th:text="#{msg.user-detail.profile.field.phoneNumber}"></dt>
+                    <dd class="col-sm-9" th:text="${user.phoneNumber}"></dd>
+
+                    <dt class="col-sm-3" th:text="#{msg.user-detail.profile.field.locale}"></dt>
+                    <dd class="col-sm-9" th:text="${user.locale}"></dd>
+
+                    <dt class="col-sm-3" th:text="#{msg.user-detail.profile.field.bio}"></dt>
+                    <dd class="col-sm-9" th:text="${user.bio}"></dd>
+
+                    <dt class="col-sm-3" th:text="#{msg.user-detail.profile.field.profileImage}"></dt>
+                    <dd class="col-sm-9">
+                        <div th:if="${user.profileImage == null}">
+                            <span class="text-muted" th:text="#{msg.user-detail.profile.noImage}"></span>
+                        </div>
+                        <div th:if="${user.profileImage != null}">
+                            <img th:src="${user.profileImage}" alt="Foto perfil" class="img-thumbnail rounded"
+                                 style="max-width: 150px;"/>
+                        </div>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+
+
 
         <div class="mt-4">
             <a class="btn btn-secondary" th:href="@{/users}" th:text="#{msg.user-detail.action.back}"></a>
