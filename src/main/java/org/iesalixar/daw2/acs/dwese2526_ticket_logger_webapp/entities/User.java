@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Clase que representa un usuario del sistema.
@@ -26,59 +28,71 @@ public class User {
     private Long id;
 
     /** Nombre de usuario único para autenticación. */
-    @Column(name = "username", nullable = false, length = 50)
-    private String username;
+    @Column(name = "email", nullable = false, unique = true, length = 40)
+    private String email;
 
     /** Hash de la contraseña del usuario. */
-    @Column(name = "passwordHash", nullable = false, length = 50)
+    @Column(name = "password_hash", nullable = false, length = 500)
     private String passwordHash;
 
     /** Indica si la cuenta está activa. */
-    @Column(name = "active")
-    private boolean active;
+    @Column(name = "active", nullable = false)
+    private Boolean active = Boolean.TRUE; 
 
     /** Indica si la cuenta no está bloqueada. */
-    @Column(name = "accountNonLocked")
-    private boolean accountNonLocked;
+    @Column(name = "account_non_locked")
+    private Boolean accountNonLocked = Boolean.TRUE;
 
     /** Fecha y hora del último cambio de contraseña. */
-    @Column(name = "lastPasswordChange", nullable = false)
+    @Column(name = "last_password_change", nullable = false)
     private LocalDateTime lastPasswordChange;
 
     /** Fecha y hora en que expira la contraseña. */
-    @Column(name = "passwordExpiresAt", nullable = false)
+    @Column(name = "password_expires_at", nullable = false)
     private LocalDateTime passwordExpiresAt;
 
     /** Número de intentos fallidos de inicio de sesión. */
-    @Column(name = "failedLoginAttempts", nullable = false)
-    private int failedLoginAttempts;
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts = 0;
 
     /** Indica si el email del usuario ha sido verificado. */
-    @Column(name = "emailVerified")
-    private boolean emailVerified;
+    @Column(name = "email_verified")
+    private boolean emailVerified = Boolean.FALSE;
 
     /** Indica si el usuario debe cambiar la contraseña en el próximo inicio de sesión. */
-    @Column(name = "mustChangePassword")
-    private boolean mustChangePassword;
+    @Column(name = "must_change_password")
+    private boolean mustChangePassword = Boolean.FALSE;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private UserProfile profile;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id")
+    )
+    private Set<Role> roles = new HashSet<>();
+
 
     /**
      * Constructor simplificado para crear un usuario con solo ID, nombre de usuario y hash de contraseña.
      *
      * @param id Identificador del usuario.
-     * @param username Nombre de usuario.
+     * @param email Nombre de usuario.
      * @param passwordHash Hash de la contraseña.
      */
-    public User(Long id, String username, String passwordHash) {
+    public User(Long id, String email, String passwordHash) {
         this.id = id;
         this.passwordHash = passwordHash;
-        this.username = username;
+        this.email = email;
     }
 
     /**
      * Constructor completo para crear un usuario con todos los campos excepto el ID.
      * Se utiliza normalmente antes de insertar un usuario en la base de datos.
      *
-     * @param username Nombre de usuario.
+     * @param email Nombre de usuario.
      * @param passwordHash Hash de la contraseña.
      * @param active Indica si la cuenta está activa.
      * @param accountNonLocked Indica si la cuenta no está bloqueada.
@@ -88,10 +102,10 @@ public class User {
      * @param emailVerified Indica si el email ha sido verificado.
      * @param mustChangePassword Indica si el usuario debe cambiar la contraseña.
      */
-    public User(String username, String passwordHash, boolean active, boolean accountNonLocked,
+    public User(String email, String passwordHash, boolean active, boolean accountNonLocked,
                 LocalDateTime lastPasswordChange, LocalDateTime passwordExpiresAt,
                 int failedLoginAttempts, boolean emailVerified, boolean mustChangePassword) {
-        this.username = username;
+        this.email = email;
         this.passwordHash = passwordHash;
         this.active = active;
         this.accountNonLocked = accountNonLocked;

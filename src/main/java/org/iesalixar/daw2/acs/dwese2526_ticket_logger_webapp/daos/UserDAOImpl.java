@@ -30,7 +30,7 @@ public class UserDAOImpl implements UserDAO {
      * {@inheritDoc}
      */
     @Override
-    public List<User> listAllUsers() throws SQLException {
+    public List<User> listAllUsers()  {
         logger.info("Listando los usuarios de la base de datos.");
         String hql = "SELECT u FROM User u";
         List<User> users = entityManager.createQuery(hql, User.class).getResultList();
@@ -42,8 +42,8 @@ public class UserDAOImpl implements UserDAO {
      * {@inheritDoc}
      */
     @Override
-    public void insertUser(User user) throws SQLException {
-        logger.info("Insertando usuario con id: {} y nombre {}", user.getId(), user.getUsername());
+    public void insertUser(User user)  {
+        logger.info("Insertando usuario con id: {} y nombre {}", user.getId(), user.getEmail());
 
         if (user.getLastPasswordChange() != null) {
             user.setPasswordExpiresAt(user.getLastPasswordChange().plusMonths(3));
@@ -56,7 +56,7 @@ public class UserDAOImpl implements UserDAO {
      * {@inheritDoc}
      */
     @Override
-    public void updateUser(User user) throws SQLException {
+    public void updateUser(User user)  {
         logger.info("Actualizando usuario con id: {}", user.getId());
 
         if (user.getLastPasswordChange() != null) {
@@ -70,7 +70,7 @@ public class UserDAOImpl implements UserDAO {
      * {@inheritDoc}
      */
     @Override
-    public void deleteUser(Long id) throws SQLException {
+    public void deleteUser(Long id)  {
         logger.info("Borrando usuario con id: {}", id);
         User user = entityManager.find(User.class, id);
         if (user != null) {
@@ -84,11 +84,11 @@ public class UserDAOImpl implements UserDAO {
      * {@inheritDoc}
      */
     @Override
-    public User getUserById(Long id) throws SQLException {
+    public User getUserById(Long id)  {
         logger.info("Recuperando usuario por id: {}", id);
         User user = entityManager.find(User.class, id);
         if (user != null) {
-            logger.info("Usuario recuperada: {} - {}", id, user.getUsername());
+            logger.info("Usuario recuperada: {} - {}", id, user.getEmail());
         }
         else {
             logger.warn("Usuario con id {} no encontrado", id);
@@ -100,14 +100,14 @@ public class UserDAOImpl implements UserDAO {
      * {@inheritDoc}
      */
     @Override
-    public boolean existsUserByName(String username) throws SQLException {
-        logger.info("Comprobando si el usuario con nombre '{}' existe", username);
-        String hql = "SELECT COUNT(u) FROM User u WHERE UPPER(u.username) = :username";
+    public boolean existsUserByEmail(String email) {
+        logger.info("Comprobando si el usuario con email '{}' existe", email);
+        String hql = "SELECT COUNT(u) FROM User u WHERE UPPER(u.email) = :email";
         Long count = entityManager.createQuery(hql, Long.class)
-                .setParameter("username", username.toUpperCase())
+                .setParameter("email", email.toUpperCase())
                 .getSingleResult();
         boolean exists = count != null && count > 0;
-        logger.info("Usuario con nombre '{}' existe: {}", username, exists);
+        logger.info("Usuario con email '{}' existe: {}", email, exists);
         return exists;
     }
 
@@ -115,33 +115,44 @@ public class UserDAOImpl implements UserDAO {
      * {@inheritDoc}
      */
     @Override
-    public boolean existUserByNameAndNotId(String username, Long id) throws SQLException {
-        logger.info("Comprobando si el usuario con nombre '{}' existe excluyendo la id: {}", username, id);
-        String hql = "SELECT COUNT(u) FROM User u WHERE UPPER(u.username) = :username AND id != :id";
+    public boolean existUserByEmailAndNotId(String email, Long id)  {
+        logger.info("Comprobando si el usuario con email '{}' existe excluyendo la id: {}", email, id);
+        String hql = "SELECT COUNT(u) FROM User u WHERE UPPER(u.email) = :email AND id != :id";
        Long count = entityManager.createQuery(hql, Long.class)
-               .setParameter("username", username.toUpperCase())
+               .setParameter("email", email.toUpperCase())
                .setParameter("id", id)
                .getSingleResult();
         boolean exists = count != null && count > 0;
-        logger.info("Usuario con nombre '{}' existe excluyendo id {}: {}", username, id, exists);
+        logger.info("Usuario con nombre '{}' existe excluyendo id {}: {}", email, id, exists);
         return exists;
     }
-
-    public List<User> listUserPage(int page, int size) {
+    @Override
+    public List<User> listUserPage(int page, int size, String sortField, String sortDir) {
         logger.info("Listing users page={}, size={} from the database.", page, size);
 
         int offset = page * size;
 
-        String hql  = "SELECT u FROM User u ORDER BY u.username";
+        String hql  = "SELECT u FROM User u ORDER BY u.email";
         return entityManager.createQuery(hql, User.class)
                 .setFirstResult(offset)
                 .setMaxResults(size)
                 .getResultList();
     }
-
+    @Override
     public long countUsers() {
         String hql = "SELECT COUNT(u) FROM User u";
         Long total = entityManager.createQuery(hql, Long.class).getSingleResult();
         return (total != null) ? total : 0L;
+    }
+    @Override
+    public User getUserByEmail(String email) {
+        if (email == null) return null;
+
+        String jpql = "SELECT u FROM User u WHERE u.email = :email";
+        return entityManager.createQuery(jpql, User.class)
+                .setParameter("email", email)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
     }
 }

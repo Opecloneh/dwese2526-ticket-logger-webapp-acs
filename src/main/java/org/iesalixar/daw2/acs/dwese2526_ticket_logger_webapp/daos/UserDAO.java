@@ -10,14 +10,14 @@ import java.util.List;
  */
 public interface UserDAO {
 
-    List<User> listAllUsers() throws SQLException;
-    List<User> listUserPage(int page, int size);
+    List<User> listAllUsers();
+    List<User> listUserPage(int page, int size, String sortField, String sortDir);
     long countUsers();
-    void insertUser(User user) throws SQLException;
-    void updateUser(User user) throws SQLException;
-    void deleteUser(Long id) throws SQLException;
-    User getUserById(Long id) throws SQLException;
-    boolean existsUserByName(String username) throws SQLException;
-    boolean existUserByNameAndNotId(String username, Long id) throws SQLException;
-
+    void insertUser(User user);
+    void updateUser(User user);
+    void deleteUser(Long id);
+    User getUserById(Long id);
+    boolean existsUserByEmail(String email);
+    boolean existUserByEmailAndNotId(String email, Long id);
+    User getUserByEmail(String email);
 }
