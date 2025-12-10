@@ -196,16 +196,24 @@ public class UserController {
                 redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
                 return "redirect:/users/edit?id=" + userDTO.getId();
             }
-            User user = userDAO.getUserById(userDTO.getId());
-            if (user == null){
-                logger.warn("No se encontro el usuario con ID {}", userDTO.getId());
-                String notFound = messageSource.getMessage("msg.user-controller.detail.notFound", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", notFound);
-                return "redirect:/users";
+
+            LocalDateTime lastPasswordChange = userDTO.getLastPasswordChange();
+            if (lastPasswordChange == null) {
+                lastPasswordChange = LocalDateTime.now();
+                userDTO.setLastPasswordChange(lastPasswordChange);
             }
-            UserMapper.copyToExistingEntity(userDTO, user);
+            LocalDateTime passwordExpiresAt = lastPasswordChange.plusDays(PASSWORD_EXPIRY_DAYS);
+            userDTO.setPasswordExpiresAt(passwordExpiresAt);
+
+            //Obtener de la base de dato los roles desde roleIds que llega de la vista
+            var roles = new HashSet<>(roleDAO.findAllByIds(userDTO.getRoleIds()));
+
+            //Mapear DTO -> entidad User incluyendo roles
+            User user = UserMapper.toEntity(userDTO, roles);
+
             userDAO.updateUser(user);
-            logger.info("Usuario con ID {} actualizado con éxito.", user.getId());
+            logger.info("Usuario con ID {} actualizado con exito. Expira el {}", user.getId(), passwordExpiresAt);
+
         } catch (Exception e) {
             logger.error("Error al actualizar el usuario con ID {}: {}", userDTO.getId(), e.getMessage());
             String errorMessage = messageSource.getMessage("msg.user-controller.update.error", null, locale);
@@ -268,6 +276,7 @@ public class UserController {
 
         return "views/user/user-form";
     }
+
     @GetMapping("/detail")
     public String showDetail(@RequestParam("id") Long id,
                              Model model,

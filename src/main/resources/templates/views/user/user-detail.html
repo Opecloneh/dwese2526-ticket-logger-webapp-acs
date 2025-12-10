@@ -80,6 +80,25 @@
                     <dt class="col-sm-3" th:text="#{msg.user-detail.profile.field.bio}"></dt>
                     <dd class="col-sm-9" th:text="${user.bio}"></dd>
 
+                    <dt class="col-sm-3" th:text="#{msg.user-detail.profile.field.roles}"></dt>
+                    <dd class="col-sm-9">
+                        <ul class="mb-0"
+                        th:if="${user.roles != null and !#lists.isEmpty(user.roles)}">
+                        <li th:each="roleName : ${user.roles}"
+                            th:text="${roleName}">
+                            ROLE_X
+                        </li>
+                        </ul>
+                        <span class="text-muted"
+                                th:if="${user.roles == null or #lists.isEmpty(user.roles)}"
+                                th:text="#{msg.user-detail.field.roles.empty}">
+                                    Este usuario no tiene roles asignados
+                        </span>
+                    </dd>
+
+
+
+
                     <dt class="col-sm-3" th:text="#{msg.user-detail.profile.field.profileImage}"></dt>
                     <dd class="col-sm-9">
                         <div th:if="${user.profileImage == null}">

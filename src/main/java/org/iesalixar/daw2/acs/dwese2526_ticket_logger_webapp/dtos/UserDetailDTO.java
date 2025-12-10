@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -29,4 +30,6 @@ public class UserDetailDTO {
     private String profileImage;
     private String bio;
     private String locale;
+
+    private Set<String> roles;
 }

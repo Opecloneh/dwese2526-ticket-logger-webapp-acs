@@ -31,6 +31,7 @@
                 <th th:text="#{msg.user-list.table.failedLoginAttempts}">Intentos fallidos</th>
                 <th th:text="#{msg.user-list.table.emailVerified}">Email verificado</th>
                 <th th:text="#{msg.user-list.table.mustChangePassword}">Debe cambiar contraseña</th>
+                <th th:text="#{msg.user-list.table.roles}">Roles</th>
                 <th th:text="#{msg.user-list.table.actions}">Acciones</th>
             </tr>
             </thead>
@@ -45,6 +46,7 @@
                 <td th:text="${user.failedLoginAttempts}"></td>
                 <td th:text="${user.emailVerified} ? 'Sí' : 'No'"></td>
                 <td th:text="${user.mustChangePassword} ? 'Sí' : 'No'"></td>
+                <td th:text="${#lists.isEmpty(user.roles)} ? '-' : ${#strings.listJoin(user.roles, ', ')}"></td>
                 <td>
                     <!-- Botón Ver detalle -->
                     <a th:href="@{/users/detail(id=${user.id})}"

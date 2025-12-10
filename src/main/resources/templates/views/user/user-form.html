@@ -64,6 +64,16 @@
                 <label for="mustChangePassword" class="form-check-label" th:text="#{msg.user-form.label.mustChangePassword}">Debe cambiar contraseña</label>
             </div>
 
+            <div class="mb-3">
+                <label for="roles" class="form-label" th:text="#{msg.user-form.roles}">Roles</label>
+                <select id="roles" class="form-select" multiple th:field="*{roleIds}">
+                    <option th:each="role : ${allRoles}"
+                            th:value="${role.id}"
+                            th:text="${role.displayName} + ' (' + ${role.name} + ')'">
+                    </option>
+                </select>
+            </div>
+
             <button type="submit" class="btn btn-primary" th:text="#{msg.user-form.button.create}">Crear</button>
             <a th:href="@{/users}" class="btn btn-secondary" th:text="#{msg.user-form.button.back}">Volver al listado</a>
         </form>
@@ -114,6 +124,16 @@
             <div class="form-check mb-3">
                 <input type="checkbox" th:field="*{mustChangePassword}" id="mustChangePassword" class="form-check-input"/>
                 <label for="mustChangePassword" class="form-check-label" th:text="#{msg.user-form.label.mustChangePassword}">Debe cambiar contraseña</label>
+            </div>
+
+            <div class="mb-3">
+                <label for="roles" class="form-label" th:text="#{msg.user-form.roles}">Roles</label>
+                <select id="roles" class="form-select" multiple th:field="*{roleIds}">
+                    <option th:each="role : ${allRoles}"
+                            th:value="${role.id}"
+                            th:text="${role.displayName} + ' (' + ${role.name} + ')'">
+                    </option>
+                </select>
             </div>
 
             <button type="submit" class="btn btn-primary" th:text="#{msg.user-form.button.update}">Actualizar</button>

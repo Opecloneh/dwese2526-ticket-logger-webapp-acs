@@ -5,6 +5,7 @@ import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.Role;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.User;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.UserProfile;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,6 +25,17 @@ public class UserMapper {
         dto.setMustChangePassword(entity.isMustChangePassword());
         dto.setPasswordExpiresAt(entity.getPasswordExpiresAt());
         dto.setPasswordHash(entity.getPasswordHash());
+
+        if (entity.getRoles() != null && !entity.getRoles().isEmpty()) {
+            Set<String> roleNames = entity.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toSet());
+            dto.setRoles(roleNames);
+        }
+        else {
+            dto.setRoles(new HashSet<>());
+        }
+
         return dto;
     }
     public static List<UserDTO> toDTOList(List<User> entities) {
@@ -135,6 +147,16 @@ public class UserMapper {
             dto.setProfileImage(profile.getProfileImage());
             dto.setBio(profile.getBio());
             dto.setLocale(profile.getLocale());
+        }
+
+        if (entity.getRoles() != null && !entity.getRoles().isEmpty()){
+            Set<String> roleNames = entity.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toSet());
+            dto.setRoles(roleNames);
+        }
+        else {
+            dto.setRoles(new HashSet<>());
         }
 
         return dto;
