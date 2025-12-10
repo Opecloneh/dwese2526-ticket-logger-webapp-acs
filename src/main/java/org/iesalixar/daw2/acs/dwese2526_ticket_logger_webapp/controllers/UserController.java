@@ -1,6 +1,8 @@
 package org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.controllers;
 
 import jakarta.validation.Valid;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.daos.RoleDAO;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.daos.RoleDAOImpl;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.daos.UserDAO;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.dtos.*;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.Province;
@@ -12,6 +14,7 @@ import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.mappers.UserMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cglib.core.Local;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,6 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -32,18 +38,22 @@ import java.util.Locale;
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-
+    private static final int PASSWORD_EXPIRY_DAYS = 90;
     /**
      * DAO para acceder a los datos de los usuarios en la base de datos.
      */
     @Autowired
     private UserDAO userDAO;
 
+    @Autowired
+    private RoleDAO roleDAO;
     /**
      * Fuente de mensajes internacionalizados.
      */
     @Autowired
     private MessageSource messageSource;
+
+
 
     /**
      * Muestra la lista de todos los usuarios.
@@ -105,16 +115,13 @@ public class UserController {
     @GetMapping("/new")
     public String showNewForm(Model model, Locale locale) {
         logger.info("Mostrando formulario para nuevo usuario.");
-        try {
-            List<User> listUsers = userDAO.listAllUsers();
-            model.addAttribute("user", new UserCreateDTO());
-            model.addAttribute("listUsers", listUsers);
-        }
-        catch (Exception e) {
-            logger.error("Error al cargar los usuarios para el formulario de usuarios: {}", e.getMessage());
-            String errorMessage = messageSource.getMessage("msg.user-controller.edit.error", null, locale);
-            model.addAttribute("errorMessage", errorMessage);
-        }
+
+        // DTO vacio para el formulario de creacion
+        model.addAttribute("user", new UserCreateDTO());
+
+        //Lista de roles para el select multiple
+        model.addAttribute("allRoles", roleDAO.listAllRoles());
+
         return "views/user/user-form";
     }
 
@@ -133,8 +140,7 @@ public class UserController {
         logger.info("Insertando nuevo usuario con nombre {}", userDTO.getEmail());
         try {
             if (result.hasErrors()) {
-                List<User> listUsers = userDAO.listAllUsers();
-                model.addAttribute("listUsers", listUsers);
+                model.addAttribute("allRoles", roleDAO.listAllRoles());
                 return "views/user/user-form";
             }
             if (userDAO.existsUserByEmail(userDTO.getEmail())) {
@@ -143,7 +149,20 @@ public class UserController {
                 redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
                 return "redirect:/users/new";
             }
-            User user = UserMapper.toEntity(userDTO);
+            LocalDateTime lastPasswordChange = userDTO.getLastPasswordChange();
+            if (lastPasswordChange == null) {
+                lastPasswordChange = LocalDateTime.now();
+                userDTO.setLastPasswordChange(lastPasswordChange);
+            }
+            LocalDateTime passwordExpiresAt = lastPasswordChange.plusDays(PASSWORD_EXPIRY_DAYS);
+            userDTO.setPasswordExpiresAt(passwordExpiresAt);
+
+            //Obtener de la base de dato los roles desde roleIds que llega de la vista
+            var roles = new HashSet<>(roleDAO.findAllByIds(userDTO.getRoleIds()));
+
+            //Mapear DTO -> entidad User incluyendo roles
+            User user = UserMapper.toEntity(userDTO, roles);
+
             userDAO.insertUser(user);
             logger.info("Usuario {} insertado con éxito.", user.getEmail());
         } catch (Exception e) {
@@ -223,21 +242,30 @@ public class UserController {
      * @return Nombre de la vista con el formulario de edición de usuario.
      */
     @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id") Long id, Model model) {
+    public String showEditForm(@RequestParam("id") Long id, Model model, Locale locale) {
         logger.info("Mostrando formulario de edición para el usuario con ID {}", id);
-        User user = null;
-        UserUpdateDTO userDTO = null;
         try {
-            user = userDAO.getUserById(id);
-            if (user == null) {
+            User user = userDAO.getUserById(id);
+            UserUpdateDTO userDTO = UserMapper.toUpdateDTO(user);
+            if (userDTO == null) {
                 logger.warn("No se encontró el usuario con ID {}", id);
+                String errorMessage = messageSource.getMessage("msg.user-controller.edit.notfound", null, locale);
+                model.addAttribute("errorMessage", errorMessage);
+                //En caso de error mandamos un DTO vacio para que la vista no reviente
+                model.addAttribute("user", new UserUpdateDTO());
             }
-            userDTO = UserMapper.toUpdateDTO(user);
+            else {
+                model.addAttribute("user", userDTO);
+            }
         } catch (Exception e) {
             logger.error("Error al obtener el usuario con ID {}: {}", id, e.getMessage());
-            model.addAttribute("errorMessage", "Error al obtener el usuario.");
+            String errorMessage = messageSource.getMessage("msg.user-controller.edit.error", null, locale);
+            model.addAttribute("errorMessage", errorMessage);
+            model.addAttribute("user", new UserUpdateDTO());
         }
-        model.addAttribute("user", userDTO);
+        //Siempre enviar la lista de roles para el select multiple
+        model.addAttribute("allRoles", roleDAO.listAllRoles());
+
         return "views/user/user-form";
     }
     @GetMapping("/detail")

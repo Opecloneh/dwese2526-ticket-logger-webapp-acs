@@ -8,6 +8,7 @@ import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.dtos.UserProfileFor
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.User;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.UserProfile;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.mappers.UserProfileMapper;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.services.FileStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +16,8 @@ import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.naming.Binding;
@@ -37,6 +36,9 @@ public class UserProfileController {
 
     @Autowired
     private UserProfileDAO userProfileDAO;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @GetMapping("/edit")
     public String showProfileForm(Model model, Locale locale){
@@ -63,7 +65,10 @@ public class UserProfileController {
 
     @PostMapping("/update")
     public String updateProfile(@Valid @ModelAttribute("userProfileForm") UserProfileFormDTO profileDto,
-                                BindingResult result, RedirectAttributes redirectAttributes, Locale locale){
+                                BindingResult result,
+                                @RequestParam(value = "profileImageFile", required = false) MultipartFile profileImageFile,
+                                RedirectAttributes redirectAttributes,
+                                Locale locale){
         logger.info("Actualizando perfil para el usuario con ID {}", profileDto.getUserId());
         //1. Si hay errores de validacion, volvemos al formulario
         if (result.hasErrors()){
@@ -90,20 +95,66 @@ public class UserProfileController {
                 //Actualizar el perfil existente con los datos del DTO
                 UserProfileMapper.copyToExistingEntity(profileDto, profile);
             }
-                //4. Guardar (insert/update) usando el DAO
-                userProfileDAO.saveOrUpdateUserProfile(profile);
-                //5. Mensaje de exito
-                String successMessage = messageSource.getMessage("msg.userProfile.success", null, locale);
-                redirectAttributes.addFlashAttribute("successMessage", successMessage);
+
+            // 4. Gestion de la imagen de perfil (si se ha subido una nueva)
+            if (profileImageFile != null && !profileImageFile.isEmpty()) {
+                logger.info("Se ha subido un nuevo archivo de imagen para el perfil del usuario {}", userId);
+
+                //Validacion del tipo MIME
+                String contentType = profileImageFile.getContentType();
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    logger.warn("Archivo de tipo no permitido: {}", contentType);
+                    String msg = messageSource.getMessage("msg.userProfile.image.invalidType", null, locale);
+                    redirectAttributes.addFlashAttribute("errorMessage", msg);
+                    return "redirect:/profile/edit";
+                }
+                //Validacion de tamaño
+                long maxSizeBytes = 2 * 1024 * 1024; // 2 MB
+                if (profileImageFile.getSize() > maxSizeBytes) {
+                    logger.warn("Archivo demasiado grande: {} bytes (límite {} bytes)",
+                            profileImageFile.getSize(), maxSizeBytes);
+                    String msg = messageSource.getMessage("msg.userProfile.image.tooLarge", null, locale);
+                    redirectAttributes.addFlashAttribute("errorMessage", msg);
+                    return "redirect:/profile/edit";
+                }
+                // Si llega aqui, el archivo pasa las validaciones -> lo guardamos
+                String oldImagePath = profileDto.getProfileImage(); // ruta actual (puede ser null)
+
+                String newImageWebPath = fileStorageService.saveFile(profileImageFile);
+                if (newImageWebPath == null) {
+                    logger.error("No se pudo guardar la nueva imagen de perfil para el usuario {}", userId);
+                    String msg = messageSource.getMessage("msg.userProfile.image.saveError", null, locale);
+                    redirectAttributes.addFlashAttribute("errorMessage", msg);
+                    return "redirect:/profile/edit";
+                }
+                logger.info("Nueva imagen de perfil guardada en {}", newImageWebPath);
+                profileDto.setProfileImage(newImageWebPath);
+
+                // Borrar imagen antigua si existe
+                if (oldImagePath != null && !oldImagePath.isBlank()) {
+                    logger.info("Eliminando imagen anterior de perfil: {}", oldImagePath);
+                    fileStorageService.deleteFile(oldImagePath);
+                }
             }
-        catch (Exception e) {
-            logger.error("Error al actualizar el perfil del usuario con ID {}: {}",
-                    profileDto.getUserId(), e.getMessage(), e);
+            //5. Crear o actualizar el perfil en funcion de si existe
+            if (isNew) {
+                //Crear un nuevo perfil a partir del DTO y el User
+                profile = UserProfileMapper.toNewEntity(profileDto, user);
+            } else {
+                UserProfileMapper.copyToExistingEntity(profileDto, profile);
+            }
+
+            userProfileDAO.saveOrUpdateUserProfile(profile);
+            String successMessage = messageSource.getMessage("msg.userProfile.success", null, locale);
+            redirectAttributes.addFlashAttribute("successMessage", successMessage);
+
+        } catch (Exception e) {
+            logger.error("Error al actualizar el perfil del usuario con ID {}: {}", profileDto.getUserId(), e.getMessage(), e);
             String errorMessage = messageSource.getMessage("msg.userProfile.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
         }
-        // 6. Redirigir la vuelta al formulario de perfil
         return "redirect:/profile/edit";
+
     }
 
 }
