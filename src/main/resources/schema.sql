@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
        ON UPDATE CASCADE
 );
 
-- Tabla de roles
+-- Tabla de roles
 CREATE TABLE IF NOT EXISTS roles (
    id BIGINT AUTO_INCREMENT PRIMARY KEY,
    -- Nombre técnico que usaremos en Spring Security: ROLE_ADMIN, ROLE_USER...
