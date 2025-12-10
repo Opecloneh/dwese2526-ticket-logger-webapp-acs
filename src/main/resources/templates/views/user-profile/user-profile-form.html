@@ -80,8 +80,6 @@
                    accept="image/*" />
 
             <small class="form-text text-muted" th:text="#{msg.userProfile.field.profileImageUpload.help}"></small>
-            <br>
-            <div th:if="${#fields.hasErrors('profileImage')}" class="text-danger" th:errors="*{profileImage}"></div>
 
             <br>
             <button type="submit" class="btn btn-primary" th:text="#{msg.userProfile.action.save}"></button>
