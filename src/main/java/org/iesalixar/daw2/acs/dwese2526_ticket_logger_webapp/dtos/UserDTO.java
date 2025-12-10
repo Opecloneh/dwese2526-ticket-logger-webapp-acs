@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.UserProfile;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -24,4 +25,6 @@ public class UserDTO {
     private boolean emailVerified;
     private boolean mustChangePassword;
     private UserProfileFormDTO profile;
+
+    private Set<String> roles;
 }
