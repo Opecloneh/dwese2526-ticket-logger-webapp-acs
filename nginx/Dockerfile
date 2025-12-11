@@ -1,4 +1,3 @@
-
 # Usamos como base la imagen oficial de Nginx, versión 1.27,
 # sobre Alpine Linux (muy ligera, ideal para contenedores de infraestructura). #Elegir una versión concreta (1.27) en lugar de 'latest' hace los despliegues # más reproducibles y evita sorpresas si la imagen cambia.
 FROM nginx:alpine
