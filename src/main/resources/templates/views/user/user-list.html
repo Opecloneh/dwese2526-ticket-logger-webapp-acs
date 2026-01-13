@@ -94,7 +94,7 @@
                     <li class="page-item"
                         th:classappend="${page.first} ? ' disabled'">
                         <a class="page-link"
-                           th:href="@{/regions(page=${page.number - 1}, size=${page.size}, sort=${sortParam})}"
+                           th:href="@{/users(page=${page.number - 1}, size=${page.size}, sort=${sortParam})}"
                            th:aria-label="#{msg.pagination.prev}">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
@@ -107,7 +107,7 @@
                         th:classappend="${i} == ${page.number} ? ' active'">
                         <a class="page-link"
                            th:text="${i + 1}"
-                           th:href="@{/regions(page=${i}, size=${page.size}, sort=${sortParam})}">
+                           th:href="@{/users(page=${i}, size=${page.size}, sort=${sortParam})}">
                         </a>
                     </li>
 
@@ -116,7 +116,7 @@
                     <li class="page-item"
                         th:classappend="${page.last} ? ' disabled'">
                         <a class="page-link"
-                           th:href="@{/regions(page=${page.number + 1}, size=${page.size}, sort=${sortParam})}"
+                           th:href="@{/users(page=${page.number + 1}, size=${page.size}, sort=${sortParam})}"
                            th:aria-label="#{msg.pagination.next}">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
