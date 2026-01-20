@@ -4,6 +4,7 @@ import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.dtos.RegionCreateDT
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.dtos.RegionDTO;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.dtos.RegionDetailDTO;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.dtos.RegionUpdateDTO;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.Region;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -18,4 +19,5 @@ public interface RegionService {
     RegionDetailDTO getDetail(Long id);
 
     List<RegionDTO> listAll();
+    Region findById(Long id);
 }

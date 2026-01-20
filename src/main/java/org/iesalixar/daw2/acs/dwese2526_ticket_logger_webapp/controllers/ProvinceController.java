@@ -1,6 +1,8 @@
 package org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.controllers;
 
 import jakarta.validation.Valid;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.exceptions.DuplicateResourceException;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.exceptions.ResourceNotFoundException;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.repositories.ProvinceRepository;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.repositories.RegionRepository;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.dtos.*;
@@ -8,6 +10,8 @@ import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.Province;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.Region;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.mappers.ProvinceMapper;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.mappers.RegionMapper;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.services.ProvinceService;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.services.RegionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +37,10 @@ public class ProvinceController {
     private static final Logger logger = LoggerFactory.getLogger(ProvinceController.class);
 
     @Autowired
-    private ProvinceRepository provinceRepository;
+    private ProvinceService provinceService;
 
     @Autowired
-    private RegionRepository regionRepository;
+    private RegionService regionService;
 
     @Autowired
     private MessageSource messageSource;
@@ -48,15 +52,15 @@ public class ProvinceController {
                 pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
 
         try {
-            Page<ProvinceDTO> provincesPage = provinceRepository.findAll(pageable).map(ProvinceMapper::toDTO);
+            Page<ProvinceDTO> listProvincesDTOs = provinceService.list(pageable);
             logger.info("Se han cargado {} provincias en la página {}",
-                    provincesPage.getNumberOfElements(), provincesPage.getNumber());
+                    listProvincesDTOs.getNumberOfElements(), listProvincesDTOs.getNumber());
 
-            model.addAttribute("page", provincesPage);
+            model.addAttribute("page", listProvincesDTOs);
 
             String sortParam = "name,asc";
-            if (provincesPage.getSort().isSorted()) {
-                Sort.Order order = provincesPage.getSort().iterator().next();
+            if (listProvincesDTOs.getSort().isSorted()) {
+                Sort.Order order = listProvincesDTOs.getSort().iterator().next();
                 sortParam = order.getProperty() + "," + order.getDirection().name().toLowerCase();
             }
             model.addAttribute("sortParam", sortParam);
@@ -72,8 +76,7 @@ public class ProvinceController {
     public String showNewForm(Model model, Locale locale) {
         logger.info("Mostrando formulario para nueva provincia.");
         try {
-            List<Region> listRegions = regionRepository.findAll();
-            List<RegionDTO> listRegionsDTOs = RegionMapper.toDTOList(listRegions);
+            List<RegionDTO> listRegionsDTOs = regionService.listAll();
 
             model.addAttribute("province", new ProvinceCreateDTO());
             model.addAttribute("listRegions", listRegionsDTOs);
@@ -97,55 +100,46 @@ public class ProvinceController {
             if (result.hasErrors()) {
                 return "views/province/province-form";
             }
+            provinceService.create(provinceDTO);
 
-            if (provinceRepository.existsByCode(provinceDTO.getCode())) {
-                logger.warn("El código de la provincia {} ya existe.", provinceDTO.getCode());
-                String errorMessage = messageSource.getMessage("msg.province-controller.insert.codeExist", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/provinces/new";
-            }
-
-            Province province = ProvinceMapper.toEntity(provinceDTO);
-            provinceRepository.save(province);
-
-            logger.info("Provincia {} insertada con éxito.", province.getCode());
+            logger.info("Provincia {} insertada con éxito.", provinceDTO.getCode());
+            return "redirect:/provinces";
+        } catch (DuplicateResourceException ex) {
+            logger.warn("El codigo de la provincia {} ya existe", provinceDTO.getCode());
+            String errorMessage = messageSource.getMessage("msg.province-controller.insert.codeExist", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/provinces/new";
         } catch (Exception e) {
             logger.error("Error al insertar la provincia {}: {}", provinceDTO.getCode(), e.getMessage(), e);
             String errorMessage = messageSource.getMessage("msg.province-controller.insert.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/provinces/new";
         }
-
-        return "redirect:/provinces";
     }
 
     @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id") Long id, Model model, Locale locale) {
+    public String showEditForm(@RequestParam("id") Long id, Model model, Locale locale, RedirectAttributes redirectAttributes) {
         logger.info("Mostrando formulario de edición para la provincia con ID {}", id);
 
         try {
-            Optional<Province> provinceOpt = provinceRepository.findById(id);
-            if (provinceOpt.isEmpty()) {
-                logger.warn("No se encontró la provincia con ID {}", id);
-                String errorMessage = messageSource.getMessage("msg.province-controller.edit.notfound", null, locale);
-                model.addAttribute("errorMessage", errorMessage);
-                return "views/province/province-form";
-            }
+            ProvinceUpdateDTO provinceDTO = provinceService.getForEdit(id);
 
-            Province province = provinceOpt.get();
-            ProvinceUpdateDTO provinceDTO = ProvinceMapper.toUpdateDTO(province);
-
-            List<Region> listRegions = regionRepository.findAll();
-            List<RegionDTO> listRegionsDTOs = RegionMapper.toDTOList(listRegions);
+            List<RegionDTO> listRegionsDTOs = regionService.listAll();
 
             model.addAttribute("province", provinceDTO);
             model.addAttribute("listRegions", listRegionsDTOs);
+            return "views/province/province-form";
+        } catch (ResourceNotFoundException ex) {
+            logger.error("Error al obtener la provincia con ID {}: {}", id, ex.getMessage());
+            String msg = messageSource.getMessage("msg.province.error.notfound", new Object[]{id}, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", msg);
+            return "redirect:/provinces";
         } catch (Exception e) {
             logger.error("Error al obtener la provincia con ID {}: {}", id, e.getMessage(), e);
             String errorMessage = messageSource.getMessage("msg.province-controller.edit.error", null, locale);
-            model.addAttribute("errorMessage", errorMessage);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/provinces";
         }
-
-        return "views/province/province-form";
     }
 
     @PostMapping("/update")
@@ -159,60 +153,54 @@ public class ProvinceController {
             if (result.hasErrors()) {
                 return "views/province/province-form";
             }
+            provinceService.update(provinceDTO);
 
-            if (provinceRepository.existsByCodeAndIdNot(provinceDTO.getCode(), provinceDTO.getId())) {
-                logger.warn("El código de la provincia {} ya existe para otra región.", provinceDTO.getCode());
-                String errorMessage = messageSource.getMessage("msg.province-controller.update.codeExist", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/provinces/edit?id=" + provinceDTO.getId();
-            }
+            logger.info("Provincia con ID {} actualizada con éxito.", provinceDTO.getId());
+            return "redirect:/provinces";
+        } catch (DuplicateResourceException ex) {
+            logger.warn("El codigo de la provincia {} ya existe para otra provincia", provinceDTO.getCode());
+            String errorMessage = messageSource.getMessage("msg.province-controller.update.codeExist", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/provinces/edit?id=" + provinceDTO.getId();
 
-            Optional<Province> provinceOpt = provinceRepository.findById(provinceDTO.getId());
-            if (provinceOpt.isEmpty()) {
-                logger.warn("No se encontró la provincia con ID {}", provinceDTO.getId());
-                String notFound = messageSource.getMessage("msg.province-controller.detail.notFound", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", notFound);
-                return "redirect:/provinces";
-            }
-
-            Province province = provinceOpt.get();
-            ProvinceMapper.copyToExistingEntity(provinceDTO, province);
-            provinceRepository.save(province);
-
-            logger.info("Provincia con ID {} actualizada con éxito.", province.getId());
+        } catch (ResourceNotFoundException ex) {
+            logger.warn("No se encontro la provincia con ID {}", provinceDTO.getId());
+            String notFound = messageSource.getMessage("msg.province-controller.detail.notFound", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", notFound);
+            return "redirect:/provinces";
         } catch (Exception e) {
             logger.error("Error al actualizar la provincia con ID {}: {}", provinceDTO.getId(), e.getMessage(), e);
             String errorMessage = messageSource.getMessage("msg.province-controller.update.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/provinces/edit?id=" + provinceDTO.getId();
         }
-
-        return "redirect:/provinces";
     }
+
 
     @PostMapping("/delete")
     public String deleteProvince(@RequestParam("id") Long id, RedirectAttributes redirectAttributes, Locale locale) {
         logger.info("Eliminando provincia con ID {}", id);
 
         try {
-            Optional<Province> provinceOpt = provinceRepository.findById(id);
-            if (provinceOpt.isEmpty()) {
-                logger.warn("No se encontró la provincia con ID {}", id);
-                String notFound = messageSource.getMessage("msg.province-controller.detail.notFound", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", notFound);
-                return "redirect:/provinces";
-            }
+            regionService.delete(id);
 
-            provinceRepository.deleteById(id);
             logger.info("Provincia con ID {} eliminada con éxito.", id);
+            return "redirect:/provinces";
+        } catch (ResourceNotFoundException ex) {
+            logger.warn("No se encontro la provincia con ID {}", id);
+            String notFound = messageSource.getMessage("msg.province-controller.detail.notFound", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", notFound);
+            return "redirect:/provinces";
         } catch (Exception e) {
             logger.error("Error al eliminar la provincia con ID {}: {}", id, e.getMessage(), e);
             String errorMessage = messageSource.getMessage("msg.province-controller.delete.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/provinces";
         }
 
-        return "redirect:/provinces";
     }
 
+    /// ///
     @GetMapping("/detail")
     public String showDetail(@RequestParam("id") Long id,
                              Model model,
@@ -221,18 +209,14 @@ public class ProvinceController {
         logger.info("Mostrando detalle de la provincia con ID {}", id);
 
         try {
-            Optional<Province> provinceOpt = provinceRepository.findById(id);
-            if (provinceOpt.isEmpty()) {
-                String msg = messageSource.getMessage("msg.province-controller.detail.notFound", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", msg);
-                return "redirect:/provinces";
-            }
-
-            Province province = provinceOpt.get();
-            ProvinceDetailDTO provinceDTO = ProvinceMapper.toDetailDTO(province);
-
+            ProvinceDetailDTO provinceDTO = provinceService.getDetail(id);
             model.addAttribute("province", provinceDTO);
             return "views/province/province-detail";
+
+        } catch (ResourceNotFoundException ex) {
+            String msg = messageSource.getMessage("msg.province-controller.detail.norFound", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", msg);
+            return "redirect:/provinces";
         } catch (Exception e) {
             logger.error("Error al obtener el detalle de la provincia {}: {}", id, e.getMessage(), e);
             String msg = messageSource.getMessage("msg.province-controller.detail.error", null, locale);

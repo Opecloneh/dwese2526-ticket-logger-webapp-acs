@@ -22,43 +22,69 @@
         <table class="table table-bordered table-striped mt-3">
             <thead>
             <tr>
+                <th:block th:with="
+                    currentSortField=${sortParam.split(',')[0]},
+                    currentSortDir=${sortParam.split(',')[1]},
+
+                    idSort=${currentSortField=='id' ? (currentSortDir=='asc'?'desc':'asc') : 'asc'},
+                    codeSort=${currentSortField=='code' ? (currentSortDir=='asc'?'desc':'asc') : 'asc'},
+                    nameSort=${currentSortField=='name' ? (currentSortDir=='asc'?'desc':'asc') : 'asc'},
+                    regionSort=${currentSortField=='regionName' ? (currentSortDir=='asc'?'desc':'asc') : 'asc'},
+
+                    idSortParam=${'id,' + idSort},
+                    codeSortParam=${'code,' + codeSort},
+                    nameSortParam=${'name,' + nameSort},
+                    regionSortParam=${'regionName,' + regionSort}
+                ">
+
                 <!-- ID -->
-                <th>
-                    <a class="text-decoration-none"
-                       th:href="@{/provinces(page=${currentPage},size=${pageSize},sortField='id',sortDir=${sortField == 'id' ? reverseSortDir : 'asc'})}">
-                    <span th:text="#{msg.province-list.id}">ID</span>
-                        <span class="ms-1" th:if="${sortField == 'id'}" th:text="${sortDir == 'asc'} ? '▲' : '▼'"></span>
-                    </a>
-                </th>
+                    <th>
+                        <a class="text-decoration-none"
+                           th:href="@{/provinces(page=${page.number}, size=${page.size}, sort=${idSortParam})}">
+                            <span th:text="#{msg.province-list.id}">ID</span>
+                            <span class="ms-1"
+                                  th:if="${currentSortField=='id'}"
+                                  th:text="${currentSortDir=='asc' ? '▲' : '▼'}"></span>
+                        </a>
+                    </th>
 
-                <!-- Código -->
-                <th>
-                    <a class="text-decoration-none"
-                       th:href="@{/provinces(page=${currentPage},size=${pageSize},sortField='id',sortDir=${sortField == 'id' ? reverseSortDir : 'asc'})}">
-                        <span th:text="#{msg.province-list.code}">Código</span>
-                        <span class="ms-1" th:if="${sortField == 'code'}" th:text="${sortDir == 'asc'} ? '▲' : '▼'"></span>
-                    </a>
-                </th>
+                    <!-- Código -->
+                    <th>
+                        <a class="text-decoration-none"
+                           th:href="@{/provinces(page=${page.number}, size=${page.size}, sort=${codeSortParam})}">
+                            <span th:text="#{msg.province-list.code}">Código</span>
+                            <span class="ms-1"
+                                  th:if="${currentSortField=='code'}"
+                                  th:text="${currentSortDir=='asc' ? '▲' : '▼'}"></span>
+                        </a>
+                    </th>
 
-                <!-- Nombre -->
-                <th>
-                    <a class="text-decoration-none"
-                       th:href="@{/provinces(page=${currentPage},size=${pageSize},sortField='name',sortDir=${sortField == 'name' ? reverseSortDir : 'asc'})}">
-                        <span th:text="#{msg.province-list.name}">Nombre</span>
-                        <span class="ms-1" th:if="${sortField == 'name'}" th:text="${sortDir == 'asc'} ? '▲' : '▼'"></span>
-                    </a>
-                </th>
 
-                <!-- Region -->
-                <th>
-                    <a class="text-decoration-none"
-                       th:href="@{/provinces(page=${currentPage},size=${pageSize},sortField='regionName',sortDir=${sortField == 'regionName' ? reverseSortDir : 'asc'})}">
-                        <span th:text="#{msg.province-list.region}">Nombre</span>
-                        <span class="ms-1" th:if="${sortField == 'regionName'}" th:text="${sortDir == 'asc'} ? '▲' : '▼'"></span>
-                    </a>
-                </th>
+                    <!-- Nombre -->
+                    <th>
+                        <a class="text-decoration-none"
+                           th:href="@{/provinces(page=${page.number}, size=${page.size}, sort=${nameSortParam})}">
+                            <span th:text="#{msg.province-list.name}">Nombre</span>
+                            <span class="ms-1"
+                                  th:if="${currentSortField=='name'}"
+                                  th:text="${currentSortDir=='asc' ? '▲' : '▼'}"></span>
+                        </a>
+                    </th>
 
-                <!-- Acciones -->
+
+                    <!-- Region -->
+                    <th>
+                        <a class="text-decoration-none"
+                           th:href="@{/provinces(page=${page.number}, size=${page.size}, sort=${regionSortParam})}">
+                            <span th:text="#{msg.province-list.region}">Región</span>
+                            <span class="ms-1"
+                                  th:if="${currentSortField=='regionName'}"
+                                  th:text="${currentSortDir=='asc' ? '▲' : '▼'}"></span>
+                        </a>
+                    </th>
+
+
+                    <!-- Acciones -->
                 <th th:text="#{msg.province-list.actions}">Acciones</th>
             </tr>
             </thead>
@@ -90,7 +116,6 @@
             </tbody>
         </table>
         <a th:href="@{/}" class="btn btn-secondary" th:text="#{msg.province-form.returnback}"></a>
-        <!-- Paginación -->
         <!-- Paginación -->
         <div class="d-flex justify-content-between align-items-center mt-3"
              th:if="${page.totalPages > 0}">

@@ -1,11 +1,15 @@
 package org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.controllers;
 
 import jakarta.validation.Valid;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.Role;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.exceptions.DuplicateResourceException;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.exceptions.ResourceNotFoundException;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.repositories.RoleRepository;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.repositories.UserRepository;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.dtos.*;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.entities.User;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.mappers.UserMapper;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Controlador Spring MVC para gestionar operaciones CRUD sobre usuarios.
@@ -32,10 +34,10 @@ import java.util.Optional;
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-    private static final int PASSWORD_EXPIRY_DAYS = 90;
+
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @Autowired
     private RoleRepository roleRepository;
@@ -47,15 +49,17 @@ public class UserController {
     public String listUsers(@PageableDefault(size = 10, sort = "id") Pageable pageable,
                             Model model,
                             Locale locale) {
-        logger.info("Solicitando la lista de usuarios... page={}, size={}, sort={}", pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
+        logger.info("Solicitando la lista de usuarios... page={}, size={}, sort={}",
+                pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
         try {
-            Page<UserDTO> pageUsers = userRepository.findAll(pageable).map(UserMapper::toDTO);
-            logger.info("Se han cargado {} usuarios en la página {}", pageUsers.getNumberOfElements(), pageUsers.getNumber());
-            model.addAttribute("page", pageUsers);
+            Page<UserDTO> listUsersDTOs = userService.list(pageable);
+            logger.info("Se han cargado {} usuarios en la página {}",
+                    listUsersDTOs.getNumberOfElements(), listUsersDTOs.getNumber());
+            model.addAttribute("page", listUsersDTOs);
 
             String sortParam = "id,asc";
-            if (pageUsers.getSort().isSorted()) {
-                var order = pageUsers.getSort().iterator().next();
+            if (listUsersDTOs.getSort().isSorted()) {
+                var order = listUsersDTOs.getSort().iterator().next();
                 sortParam = order.getProperty() + "," + order.getDirection().name().toLowerCase();
             }
             model.addAttribute("sortParam", sortParam);
@@ -72,6 +76,7 @@ public class UserController {
     public String showNewForm(Model model, Locale locale) {
         logger.info("Mostrando formulario para nuevo usuario.");
         try {
+            List<UserDTO> listUsers = userService.listAll();
             model.addAttribute("user", new UserCreateDTO());
             model.addAttribute("allRoles", roleRepository.findAll());
         } catch (Exception e) {
@@ -94,28 +99,26 @@ public class UserController {
                 model.addAttribute("allRoles", roleRepository.findAll());
                 return "views/user/user-form";
             }
-            if (userRepository.existsByEmail(userDTO.getEmail())) {
-                logger.warn("El email {} ya existe.", userDTO.getEmail());
-                String errorMessage = messageSource.getMessage("msg.user-controller.insert.codeExist", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/users/new";
-            }
-            LocalDateTime lastPasswordChange = Optional.ofNullable(userDTO.getLastPasswordChange()).orElse(LocalDateTime.now());
-            userDTO.setLastPasswordChange(lastPasswordChange);
-            userDTO.setPasswordExpiresAt(lastPasswordChange.plusDays(PASSWORD_EXPIRY_DAYS));
 
-            var roles = new HashSet<>(roleRepository.findAllById(userDTO.getRoleIds()));
-            User user = UserMapper.toEntity(userDTO, roles);
-            userRepository.save(user);
-            logger.info("Usuario {} insertado con éxito.", user.getEmail());
+            userService.create(userDTO);
+            logger.info("Usuario {} insertada con exito.", userDTO.getEmail());
+            return "redirect:/users";
+
+        } catch (DuplicateResourceException ex) {
+            logger.warn("El codigo de la user {} ya existe", userDTO.getEmail());
+            String errorMessage = messageSource.getMessage("msg.user-controller.insert.codeExist", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/users/new";
 
         } catch (Exception e) {
             logger.error("Error al insertar el usuario {}: {}", userDTO.getEmail(), e.getMessage(), e);
             String errorMessage = messageSource.getMessage("msg.user-controller.insert.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/users/new";
         }
-        return "redirect:/users";
+
     }
+
 
     @GetMapping("/edit")
     public String showEditForm(@RequestParam("id") Long id,
@@ -124,24 +127,22 @@ public class UserController {
                                RedirectAttributes redirectAttributes) {
         logger.info("Mostrando formulario de edición para usuario con ID {}", id);
         try {
-            Optional<User> userOpt = userRepository.findById(id);
-            if (userOpt.isEmpty()) {
-                logger.warn("No se encontró el usuario con ID {}", id);
-                String errorMessage = messageSource.getMessage("msg.user-controller.edit.notfound", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/users";
-            }
-            UserUpdateDTO userDTO = UserMapper.toUpdateDTO(userOpt.get());
+            UserUpdateDTO userDTO = userService.getForEdit(id);
             model.addAttribute("user", userDTO);
-            model.addAttribute("allRoles", roleRepository.findAll());
+            model.addAttribute("allRoles", roleRepository.findAll()); // siempre cargar roles
+            return "views/user/user-form";
+
+        } catch (ResourceNotFoundException ex) {
+            logger.error("Error al obtener la user con ID {}: {}", id, ex.getMessage());
+            String msg = messageSource.getMessage("msg.user.error.notfound", new Object[]{id}, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", msg);
+            return "redirect:/users";
         } catch (Exception e) {
-            logger.error("Error al obtener usuario con ID {}: {}", id, e.getMessage(), e);
-            String errorMessage = messageSource.getMessage("msg.user-controller.edit.error", null, locale);
-            model.addAttribute("errorMessage", errorMessage);
-            model.addAttribute("user", new UserUpdateDTO());
-            model.addAttribute("allRoles", roleRepository.findAll());
+            logger.error("Error al obtener la user de ID {}: {}", id, e.getMessage(), e);
+            String msg = messageSource.getMessage("msg.user.error.load", new Object[]{id}, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", msg);
+            return "redirect:/users";
         }
-        return "views/user/user-form";
     }
 
     @PostMapping("/update")
@@ -151,35 +152,37 @@ public class UserController {
                              Locale locale,
                              Model model) {
         logger.info("Actualizando usuario con ID {}", userDTO.getId());
+        if (userDTO.getRoleIds() != null && userDTO.getRoleIds().isEmpty()) {
+            userDTO.setRoleIds(null);
+        }
+
         try {
             if (result.hasErrors()) {
                 model.addAttribute("allRoles", roleRepository.findAll());
                 return "views/user/user-form";
             }
-            if (userRepository.existsByEmailAndIdNot(userDTO.getEmail(), userDTO.getId())) {
-                logger.warn("El email {} ya existe para otro usuario.", userDTO.getEmail());
-                String errorMessage = messageSource.getMessage("msg.user-controller.update.codeExist", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/users/edit?id=" + userDTO.getId();
+
+            // Filtrar nulls de roleIds
+            Set<Long> roleIds = new HashSet<>();
+            if (userDTO.getRoleIds() != null) {
+                for (Long id : userDTO.getRoleIds()) {
+                    if (id != null) {
+                        roleIds.add(id);
+                    }
+                }
             }
 
-            Optional<User> userOpt = userRepository.findById(userDTO.getId());
-            if (userOpt.isEmpty()) {
-                logger.warn("No se encontró el usuario con ID {}", userDTO.getId());
-                String errorMessage = messageSource.getMessage("msg.user-controller.edit.notfound", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/users";
+            // Obtener roles existentes
+            Set<Role> roles = new HashSet<>(roleRepository.findAllById(roleIds));
+
+            if (roles.size() != roleIds.size()) {
+                throw new ResourceNotFoundException("role", "ids", roleIds);
             }
 
-            LocalDateTime lastPasswordChange = Optional.ofNullable(userDTO.getLastPasswordChange()).orElse(LocalDateTime.now());
-            userDTO.setLastPasswordChange(lastPasswordChange);
-            userDTO.setPasswordExpiresAt(lastPasswordChange.plusDays(PASSWORD_EXPIRY_DAYS));
-
-            var roles = new HashSet<>(roleRepository.findAllById(userDTO.getRoleIds()));
-            User user = userOpt.get();
-            UserMapper.copyToExistingEntity(userDTO, user, roles);
-            userRepository.save(user);
-            logger.info("Usuario con ID {} actualizado con éxito. Expira el {}", user.getId(), userDTO.getPasswordExpiresAt());
+            // Llamar a service
+            userService.update(userDTO, roles);
+            logger.info("Usuario con ID {} actualizado con éxito. Expira el {}", userDTO.getId(), userDTO.getPasswordExpiresAt());
+            return "redirect:/users";
 
         } catch (Exception e) {
             logger.error("Error al actualizar usuario con ID {}: {}", userDTO.getId(), e.getMessage(), e);
@@ -187,7 +190,6 @@ public class UserController {
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
             return "redirect:/users/edit?id=" + userDTO.getId();
         }
-        return "redirect:/users";
     }
 
     @PostMapping("/delete")
@@ -196,21 +198,22 @@ public class UserController {
                              Locale locale) {
         logger.info("Eliminando usuario con ID {}", id);
         try {
-            Optional<User> userOpt = userRepository.findById(id);
-            if (userOpt.isEmpty()) {
-                logger.warn("No se encontró el usuario con ID {}", id);
-                String errorMessage = messageSource.getMessage("msg.user-controller.detail.notFound", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/users";
-            }
-            userRepository.deleteById(id);
-            logger.info("Usuario con ID {} eliminado con éxito.", id);
-        } catch (Exception e) {
+            userService.delete(id);
+
+            logger.info("Usuario con ID {} eliminado con exito.", id);
+            return "redirect:/users";
+
+        } catch (ResourceNotFoundException ex) {
+            logger.error("No se encontro el usuario con ID {}: {}", id, ex.getMessage(), ex);
+            String errorMessage = messageSource.getMessage("msg.user-controller.delete.notFound", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redurect:/users";
+        }catch (Exception e) {
             logger.error("Error al eliminar usuario con ID {}: {}", id, e.getMessage(), e);
             String errorMessage = messageSource.getMessage("msg.user-controller.delete.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redurect:/users";
         }
-        return "redirect:/users";
     }
 
     @GetMapping("/detail")
@@ -220,17 +223,16 @@ public class UserController {
                              Locale locale) {
         logger.info("Mostrando detalle de usuario con ID {}", id);
         try {
-            Optional<User> userOpt = userRepository.findById(id);
-            if (userOpt.isEmpty()) {
-                String errorMessage = messageSource.getMessage("msg.user-controller.detail.notFound", null, locale);
-                redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-                return "redirect:/users";
-            }
-            UserDetailDTO userDTO = UserMapper.toDetailDTO(userOpt.get());
+            UserDetailDTO userDTO = userService.getDetail(id);
             model.addAttribute("user", userDTO);
             return "views/user/user-detail";
+
+        } catch (ResourceNotFoundException ex) {
+            String errorMessage = messageSource.getMessage("msg.user-controller.detail.notFound", null, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
+            return "redirect:/users";
+
         } catch (Exception e) {
-            logger.error("Error al obtener detalle del usuario con ID {}: {}", id, e.getMessage(), e);
             String errorMessage = messageSource.getMessage("msg.user-controller.detail.error", null, locale);
             redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
             return "redirect:/users";

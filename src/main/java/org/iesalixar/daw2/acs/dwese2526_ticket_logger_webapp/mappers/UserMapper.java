@@ -110,7 +110,7 @@ public class UserMapper {
         e.setRoles(roles);
         return e;
     }
-    public static void copyToExistingEntity(UserUpdateDTO dto, User entity, HashSet<Role> roles){
+    public static void copyToExistingEntity(UserUpdateDTO dto, User entity, Set<Role> roles){
         if (dto == null || entity == null) return;
         entity.setActive(dto.isActive());
         entity.setEmail(dto.getEmail());
@@ -119,8 +119,13 @@ public class UserMapper {
         entity.setFailedLoginAttempts(dto.getFailedLoginAttempts());
         entity.setLastPasswordChange(dto.getLastPasswordChange());
         entity.setMustChangePassword(dto.isMustChangePassword());
-        entity.setPasswordExpiresAt(dto.getPasswordExpiresAt());
+
         entity.setPasswordHash(dto.getPasswordHash());
+
+        // Roles (muy importante)
+        if (roles != null) {
+            entity.setRoles(roles);
+        }
     }
     public static UserDetailDTO toDetailDTO(User entity) {
         if (entity == null) return null;

@@ -64,11 +64,12 @@ public class RegionController {
             Page<RegionDTO> listRegionsDTOs = regionService.list(pageable);
             logger.info("Se han cargado {} regiones en la pagina {}",
                     listRegionsDTOs.getNumberOfElements(), listRegionsDTOs.getNumber());
+
             model.addAttribute("page", listRegionsDTOs);
 
             String sortParam = "name,asc";
             if (listRegionsDTOs.getSort().isSorted()) {
-                Sort.Order order = listRegionsDTOs.getSort().iterator().next();
+                Sort.Order order = listRegionsDTOs.getSort().stream().iterator().next();
                 sortParam = order.getProperty() + "," + order.getDirection().name().toLowerCase();
             }
             model.addAttribute("sortParam", sortParam);
@@ -76,8 +77,10 @@ public class RegionController {
             logger.error("Error al listar las regiones: {}", e.getMessage());
             model.addAttribute("errorMessage", "Error al listar las regiones.");
         }
+
         return "views/region/region-list";
     }
+
 
     /**
      * Muestra el formulario para crear una nueva región.
@@ -89,7 +92,7 @@ public class RegionController {
     public String showNewForm(Model model, Locale locale, Pageable pageable) {
         logger.info("Mostrando formulario para nueva region.");
         try {
-            List<RegionDTO> listRegions = regionService.listAll();
+            List<RegionDTO> listRegions = regionService.listAll(); //*****
             model.addAttribute("region", new RegionCreateDTO());
             model.addAttribute("listRegions", listRegions);
         } catch (Exception e) {
@@ -169,7 +172,6 @@ public class RegionController {
             redirectAttributes.addFlashAttribute("errorMessage", notFound);
             return "redirect:/regions";
         }
-
         catch (Exception e) {
             logger.error("Error al actualizar la región con ID {}: {}", regionDTO.getId(), e.getMessage());
             String errorMessage = messageSource.getMessage("msg.region-controller.update.error", null, locale);
@@ -216,7 +218,7 @@ public class RegionController {
      * @return Nombre de la vista con el formulario de edición de región.
      */
     @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id") Long id, Model model, Locale locale) {
+    public String showEditForm(@RequestParam("id") Long id, Model model, Locale locale, RedirectAttributes redirectAttributes) {
         logger.info("Mostrando formulario de edicion para la region con ID {}", id);
 
         try {
@@ -226,11 +228,13 @@ public class RegionController {
 
         } catch (ResourceNotFoundException ex) {
             logger.error("Error al obtener la region con ID {}: {}", id, ex.getMessage());
-            model.addAttribute("errorMessage", "Error al obtener la region.");
+            String msg = messageSource.getMessage("msg.region.error.notfound", new Object[]{id}, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", msg);
             return "redirect:/regions";
         } catch (Exception e) {
-            logger.error("Error al obtener la region con ID {}: {}", id, e.getMessage());
-            model.addAttribute("errorMessage", "Error al obtener la region.");
+            logger.error("Error al obtener la region de ID {}: {}", id, e.getMessage(), e);
+            String msg = messageSource.getMessage("msg.region.error.load", new Object[]{id}, locale);
+            redirectAttributes.addFlashAttribute("errorMessage", msg);
             return "redirect:/regions";
         }
     }

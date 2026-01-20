@@ -103,6 +103,14 @@ public class UserProfileServiceImpl implements UserProfileService {
                     "Tipo de archivo no permitido"
             );
         }
-
+        // Tamaño excedido
+        if (file.getSize() > MAX_IMAMGE_SIZE_BYTES) {
+            throw new InvalidFileException(
+                    "userProfile",
+                    "profileImageFile",
+                    file.getSize(),
+                    "Archivo demasiado grande (maximo " + MAX_IMAMGE_SIZE_BYTES + " bytes)"
+            );
+        }
     }
 }

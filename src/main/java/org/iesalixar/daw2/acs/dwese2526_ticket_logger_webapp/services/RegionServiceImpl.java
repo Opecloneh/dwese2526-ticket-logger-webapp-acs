@@ -80,4 +80,10 @@ public class RegionServiceImpl implements RegionService{
                 .toList();
     }
 
+    @Override
+    public Region findById(Long id) {
+        return regionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("region", "id", id));
+    }
+
 }

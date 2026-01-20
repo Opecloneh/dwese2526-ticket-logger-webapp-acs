@@ -22,33 +22,44 @@
         <table class="table table-bordered table-striped mt-3">
             <thead>
             <tr>
-                <!-- ID -->
-                <th>
-                    <a class="text-decoration-none"
-                       th:href="@{/regions(page=${currentPage},size=${pageSize},sortField='id',sortDir=${(sortField == 'id') ? reverseSortDir : 'asc'})}">
-                        <span th:text="#{msg.region-list.table.id}">ID</span>
-                        <span class="ms-1" th:if="${sortField == 'id'}" th:text="${sortDir == 'asc'} ? '▲' : '▼'"></span>
-                    </a>
-                </th>
 
-                <!-- Código -->
-                <th>
-                    <a class="text-decoration-none"
-                       th:href="@{/regions(page=${currentPage},size=${pageSize},sortField='code',sortDir=${(sortField == 'code') ? reverseSortDir : 'asc'})}">
-                        <span th:text="#{msg.region-list.table.code}">Código</span>
-                        <span class="ms-1" th:if="${sortField == 'code'}" th:text="${sortDir == 'asc'} ? '▲' : '▼'"></span>
-                    </a>
-                </th>
+                <!-- Variables de ordenación -->
+                <th:block th:with="
+        currentSortField=${sortParam.split(',')[0]},
+        currentSortDir=${sortParam.split(',')[1]},
+        idSort=${currentSortField=='id' ? (currentSortDir=='asc'?'desc':'asc') : 'asc'},
+        codeSort=${currentSortField=='code' ? (currentSortDir=='asc'?'desc':'asc') : 'asc'},
+        nameSort=${currentSortField=='name' ? (currentSortDir=='asc'?'desc':'asc') : 'asc'},
+        idSortParam=${'id,' + idSort},
+        codeSortParam=${'code,' + codeSort},
+        nameSortParam=${'name,' + nameSort}">
 
-                <!-- Nombre -->
-                <th>
-                    <a class="text-decoration-none"
-                       th:href="@{/regions(page=${currentPage},size=${pageSize},sortField='name',sortDir=${(sortField == 'name') ? reverseSortDir : 'asc'})}">
-                        <span th:text="#{msg.region-list.table.name}">Nombre</span>
-                        <span class="ms-1" th:if="${sortField == 'name'}" th:text="${sortDir == 'asc'} ? '▲' : '▼'"></span>
-                    </a>
-                </th>
+                    <!-- ID -->
+                    <th>
+                        <a th:href="@{/regions(page=${page.number},size=${page.size},sort=${idSortParam})}">
+                            ID
+                            <span th:if="${currentSortField=='id'}"
+                                  th:text="${currentSortDir=='asc'?'▲':'▼'}"></span>
+                        </a>
+                    </th>
 
+                    <!-- Código -->
+                    <th>
+                        <a th:href="@{/regions(page=${page.number},size=${page.size},sort=${codeSortParam})}">
+                            Código
+                            <span th:if="${currentSortField=='code'}"
+                                  th:text="${currentSortDir=='asc'?'▲':'▼'}"></span>
+                        </a>
+                    </th>
+
+                    <!-- Nombre -->
+                    <th>
+                        <a th:href="@{/regions(page=${page.number},size=${page.size},sort=${nameSortParam})}">
+                            Nombre
+                            <span th:if="${currentSortField=='name'}"
+                                  th:text="${currentSortDir=='asc'?'▲':'▼'}"></span>
+                        </a>
+                    </th>
                 <!-- Acciones -->
                 <th th:text="#{msg.region-list.table.actions}">Acciones</th>
             </tr>
