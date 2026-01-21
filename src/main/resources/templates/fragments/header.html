@@ -1,4 +1,4 @@
-<header th:fragment="header" class="border-bottom bg-light" xmlns:th="http://www.thymeleaf.org">
+<header th:fragment="header" class="border-bottom bg-light" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" xmlns:th="http://www.w3.org/1999/xhtml">
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
 
@@ -37,6 +37,14 @@
                     </li>
                 </ul>
 
+                <!-- Texto bienvenida (solo autenticado) -->
+                <div class="d-none d-lg-flex align-items-center me-3"
+                     sec:authorize="isAuthenticated()">
+                    <span class="small text-secondary fw-medium me-1">Bienvenido,</span>
+                    <span class="small fw-semibold text-primary text-truncate" style="max-width:220px"
+                          sec:authentication="name"></span>
+                </div>
+
                 <!-- Selector de idioma -->
                 <form method="get"
                       class="d-lg-flex align-items-center me-3"
@@ -50,6 +58,11 @@
                     </select>
                 </form>
 
+                <div sec:autorize="!isAuthenticated()">
+                    <a class="btn btn-outline-primary btn-sm" th:href="@{/login}">
+                        Login
+                    </a>
+                </div>
 
                 <!-- Avatar y menú usuario -->
                 <div class="dropdown text-end">
@@ -61,7 +74,13 @@
                         <li><a class="dropdown-item" th:href="@{/profile/edit}">Editar perfil</a></li>
                         <li><a class="dropdown-item" th:href="@{/profile/change-password}">Cambiar contraseña</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" th:href="@{/logout}">Cerrar sesión</a></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="m-0">
+                                <button type="submit" class="dropdown-item text-dager">
+                                    Cerrar sesión
+                                </button>
+                            </form>
+                        </li>
                     </ul>
                 </div>
 

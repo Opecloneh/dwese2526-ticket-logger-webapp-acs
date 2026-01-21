@@ -5,5 +5,5 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface UserProfileService {
     UserProfileFormDTO getFormByEmail(String email);
-    void updateProfile(UserProfileFormDTO profileDto, MultipartFile profileImageFile);
+    void updateProfile(String email, UserProfileFormDTO profileDto, MultipartFile profileImageFile);
 }
