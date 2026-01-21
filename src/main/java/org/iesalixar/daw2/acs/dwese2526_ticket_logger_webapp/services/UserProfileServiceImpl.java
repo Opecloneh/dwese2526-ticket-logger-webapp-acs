@@ -46,13 +46,15 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
-    public void updateProfile(UserProfileFormDTO profileDto, MultipartFile profileImageFile) {
-    Long userId = profileDto.getUserId();
-    logger.info("Actualizando perfil para userId={}", userId);
+    public void updateProfile(String email, UserProfileFormDTO profileDto, MultipartFile profileImageFile) {
+
+    logger.info("Actualizando perfil para email={}", email);
 
     // 1) Comprobar que existe el User
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("user", "id", userId));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("user", "email", email));
+
+        Long userId = user.getId();
 
         // 2) Cargar perfil (puede no existir)
         UserProfile profile = userProfileRepository.findByUserId(userId).orElse(null);

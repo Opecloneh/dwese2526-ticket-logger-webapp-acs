@@ -15,57 +15,74 @@ import java.util.Set;
  * Clase que representa un usuario del sistema.
  * Contiene información de autenticación, estado de cuenta y control de contraseñas.
  */
+/**
+ * Entidad JPA para la tabla 'users'.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity //Marca esta clase como una entidad gestionada por JPA
-@Table(name = "users") //Especifica el nombre de la tabla asosciada a esta entidad
+@Entity
+@Table(name = "users")
 public class User {
 
-    /** Identificador único del usuario. */
+
+    /** BIGINT AUTO_INCREMENT PRIMARY KEY */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Nombre de usuario único para autenticación. */
+
+    /** VARCHAR(100) NOT NULL UNIQUE */
     @Column(name = "email", nullable = false, unique = true, length = 40)
     private String email;
 
-    /** Hash de la contraseña del usuario. */
+
+    /** VARCHAR(500) NOT NULL */
     @Column(name = "password_hash", nullable = false, length = 500)
     private String passwordHash;
 
-    /** Indica si la cuenta está activa. */
+
+    /** BOOLEAN NOT NULL DEFAULT TRUE */
     @Column(name = "active", nullable = false)
-    private Boolean active = Boolean.TRUE; 
+    private boolean active;
 
-    /** Indica si la cuenta no está bloqueada. */
-    @Column(name = "account_non_locked")
-    private Boolean accountNonLocked = Boolean.TRUE;
 
-    /** Fecha y hora del último cambio de contraseña. */
-    @Column(name = "last_password_change", nullable = false)
+    /** BOOLEAN NOT NULL DEFAULT TRUE */
+    @Column(name = "account_non_locked", nullable = false)
+    private boolean accountNonLocked;
+
+
+    /** DATETIME NULL */
+    @Column(name = "last_password_change")
     private LocalDateTime lastPasswordChange;
 
-    /** Fecha y hora en que expira la contraseña. */
-    @Column(name = "password_expires_at", nullable = false)
+
+    /** DATETIME NULL */
+    @Column(name = "password_expires_at")
     private LocalDateTime passwordExpiresAt;
 
-    /** Número de intentos fallidos de inicio de sesión. */
+
+    /** INT DEFAULT 0 */
     @Column(name = "failed_login_attempts", nullable = false)
-    private int failedLoginAttempts = 0;
+    private Integer failedLoginAttempts = 0;
 
-    /** Indica si el email del usuario ha sido verificado. */
-    @Column(name = "email_verified")
-    private boolean emailVerified = Boolean.FALSE;
 
-    /** Indica si el usuario debe cambiar la contraseña en el próximo inicio de sesión. */
-    @Column(name = "must_change_password")
-    private boolean mustChangePassword = Boolean.FALSE;
+    /** BOOLEAN NOT NULL DEFAULT FALSE */
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
 
+
+    /** BOOLEAN NOT NULL DEFAULT FALSE */
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword;
+
+
+    /** Relación 1:1 con la entidad UserProfile */
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private UserProfile profile;
 
+
+    /** Relación N:M con Role a través de la tabla intermedia 'user_roles'. */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
@@ -75,37 +92,19 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
 
-    /**
-     * Constructor simplificado para crear un usuario con solo ID, nombre de usuario y hash de contraseña.
-     *
-     * @param id Identificador del usuario.
-     * @param email Nombre de usuario.
-     * @param passwordHash Hash de la contraseña.
-     */
-    public User(Long id, String email, String passwordHash) {
-        this.id = id;
-        this.passwordHash = passwordHash;
-        this.email = email;
-    }
 
-    /**
-     * Constructor completo para crear un usuario con todos los campos excepto el ID.
-     * Se utiliza normalmente antes de insertar un usuario en la base de datos.
-     *
-     * @param email Nombre de usuario.
-     * @param passwordHash Hash de la contraseña.
-     * @param active Indica si la cuenta está activa.
-     * @param accountNonLocked Indica si la cuenta no está bloqueada.
-     * @param lastPasswordChange Fecha del último cambio de contraseña.
-     * @param passwordExpiresAt Fecha de expiración de la contraseña.
-     * @param failedLoginAttempts Número de intentos fallidos de inicio de sesión.
-     * @param emailVerified Indica si el email ha sido verificado.
-     * @param mustChangePassword Indica si el usuario debe cambiar la contraseña.
-     */
-    public User(String email, String passwordHash, boolean active, boolean accountNonLocked,
-                LocalDateTime lastPasswordChange, LocalDateTime passwordExpiresAt,
-                int failedLoginAttempts, boolean emailVerified, boolean mustChangePassword) {
-        this.email = email;
+
+    /** Constructor completo (sin id autogenerado). */
+    public User(String username,
+                String passwordHash,
+                Boolean active,
+                Boolean accountNonLocked,
+                LocalDateTime lastPasswordChange,
+                LocalDateTime passwordExpiresAt,
+                Integer failedLoginAttempts,
+                Boolean emailVerified,
+                Boolean mustChangePassword) {
+        this.email = username;
         this.passwordHash = passwordHash;
         this.active = active;
         this.accountNonLocked = accountNonLocked;

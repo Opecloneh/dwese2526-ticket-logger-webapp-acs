@@ -4,59 +4,76 @@ import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+
+
+/**
+ * DTO reutilizable para crear usuarios.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class UserCreateDTO {
 
+
+    // En este DTO este campo siempre vendrá null porque es una inserción (id autogenerado).
     private Long id;
 
-    /** Nombre de usuario único para autenticación. */
-    @NotEmpty(message = "{msg.user.email.notEmpty}")
-    @Size(max = 50, message = "{msg.user.email.size}")
+
+    @Email(message = "{msg.user.email.invalid}")
+    @NotBlank(message = "{msg.user.username.notblank}")
+    @Size(min = 4, max = 100, message = "{msg.user.username.size}")
     private String email;
 
-    /** Hash de la contraseña del usuario. */
-    @NotEmpty(message = "{msg.user.passwordHash.notEmpty}")
-    @Size(max = 50, message = "{msg.user.passwordHash.size}")
+
+    @NotBlank(message = "{msg.user.passwordHash.notblank}")
+    @Size(min = 8, max = 500, message = "{msg.user.passwordHash.size}")
     private String passwordHash;
 
-    /** Indica si la cuenta está activa. */
-    private boolean active;
 
-    /** Indica si la cuenta no está bloqueada. */
-    private boolean accountNonLocked;
+    @NotNull(message = "{msg.user.active.notnull}")
+    private boolean active = Boolean.TRUE;
 
-    /** Fecha y hora del último cambio de contraseña. */
 
+    @NotNull(message = "{msg.user.accountNonLocked.notnull}")
+    private boolean accountNonLocked = Boolean.TRUE;
+
+
+    @PastOrPresent(message = "{msg.user.lastPasswordChange.pastorpresent}")
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime lastPasswordChange;
 
-    /** Fecha y hora en que expira la contraseña. */
+
+    @FutureOrPresent(message = "{msg.user.passwordExpiresAt.futureorpresent}")
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime passwordExpiresAt;
 
-    /** Número de intentos fallidos de inicio de sesión. */
-    private int failedLoginAttempts;
 
-    /** Indica si el email del usuario ha sido verificado. */
-    private boolean emailVerified;
+    @Min(value = 0, message = "{msg.user.failedLoginAttempts.min}")
+    private Integer failedLoginAttempts = 0;
 
-    /** Indica si el usuario debe cambiar la contraseña en el próximo inicio de sesión. */
-    private boolean mustChangePassword;
 
+    @NotNull(message = "{msg.user.emailVerified.notnull}")
+    private boolean emailVerified = Boolean.FALSE;
+
+
+    @NotNull(message = "{msg.user.mustChangePassword.notnull}")
+    private boolean mustChangePassword = Boolean.FALSE;
+
+
+    // ─────────────────────────────────────
+    // Roles seleccionados (ids de Role) - OBLIGATORIOS
+    // ─────────────────────────────────────
     @NotEmpty(message = "{msg.user.roles.notempty}")
     private Set<Long> roleIds = new HashSet<>();
-
 }

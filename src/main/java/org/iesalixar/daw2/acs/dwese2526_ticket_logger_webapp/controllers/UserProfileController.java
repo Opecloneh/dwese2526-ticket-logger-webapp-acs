@@ -21,6 +21,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.security.Principal;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -47,17 +49,17 @@ public class UserProfileController {
     private FileStorageService fileStorageService;
 
     @GetMapping("/edit")
-    public String showProfileForm(Model model, Locale locale) {
-        String FIXED_EMAIL = "admin@app.local";
-        logger.info("Mostrando formulario de perfil para el usuario fijo {}", FIXED_EMAIL);
+    public String showProfileForm(Model model, Locale locale, Principal principal) {
+        String email = principal.getName();
+        logger.info("Mostrando formulario de perfil para el usuario fijo {}", email);
 
         try{
-            UserProfileFormDTO formDto = userProfileService.getFormByEmail(FIXED_EMAIL);
+            UserProfileFormDTO formDto = userProfileService.getFormByEmail(email);
             model.addAttribute("userProfileForm", formDto);
             return "views/user-profile/user-profile-form";
         }
         catch (ResourceNotFoundException ex){
-            logger.warn("No se encontró el usuario con email {}", FIXED_EMAIL);
+            logger.warn("No se encontró el usuario con email {}", ex.getMessage());
             String errorMessage = messageSource.getMessage("msg.user-controller.edit.notfound", null, locale);
             model.addAttribute("errorMessage", errorMessage);
             return "views/user-profile/user-profile-form";
@@ -76,9 +78,11 @@ public class UserProfileController {
             BindingResult result,
             @RequestParam(value = "profileImageFile", required = false) MultipartFile profileImageFile,
             RedirectAttributes redirectAttributes,
-            Locale locale) {
+            Locale locale,
+            Principal principal) {
 
-        logger.info("Actualizando perfil para el usuario con ID {}", profileDto.getUserId());
+        String email = principal.getName();
+        logger.info("Actualizando perfil para email={}", email);
 
         if (result.hasErrors()) {
             logger.warn("Errores de validación en el formulario de perfil para userId={}", profileDto.getUserId());
@@ -87,7 +91,7 @@ public class UserProfileController {
 
         try {
             // 2) Delegar logica de negocio en el service
-            userProfileService.updateProfile(profileDto, profileImageFile);
+            userProfileService.updateProfile(email, profileDto, profileImageFile);
             // 3) Mensaje de exito
             String successMessage = messageSource.getMessage("msg.userProfile.success", null, locale);
             redirectAttributes.addFlashAttribute("successMessage", successMessage);
