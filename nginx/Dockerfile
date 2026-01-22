@@ -1,13 +1,13 @@
 # Usamos como base la imagen oficial de Nginx, versión 1.27,
 # sobre Alpine Linux (muy ligera, ideal para contenedores de infraestructura). #Elegir una versión concreta (1.27) en lugar de 'latest' hace los despliegues # más reproducibles y evita sorpresas si la imagen cambia.
-FROM nginx:alpine
+FROM nginx:1.27-alpine
 
 # Instalamos 'openssl' dentro de la imagen.
 #Usamos 'apk', que es el gestor de paquetes de Alpine (equivalente a apt/yum).
 #La opción '--no-cache' evita que se guarden los índices de paquetes en disco, reduciendo el tamaño final de la imagen y evitando basura innecesaria.
 # Necesitamos 'openssl' para poder generar certificados autofirmados
 # en el script de entrada (docker-entrypoint.sh).
-RUN apk update && apk add --no-cache openssl
+RUN apk add --no-cache openssl
 
 #Copiamos nuestra configuración personalizada de Nginx desde el contexto
 # de build (la carpeta del proyecto) al interior de la imagen.

@@ -110,7 +110,7 @@ public class UserMapper {
         e.setRoles(roles);
         return e;
     }
-    public static void copyToExistingEntity(UserUpdateDTO dto, User entity){
+    public static void copyToExistingEntity(UserUpdateDTO dto, User entity, HashSet<Role> roles){
         if (dto == null || entity == null) return;
         entity.setActive(dto.isActive());
         entity.setEmail(dto.getEmail());

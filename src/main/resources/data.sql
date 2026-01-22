@@ -1,4 +1,3 @@
-
 -- Inserts de las Comunidades Autónomas, ignora si se produce un error en la insercción
 INSERT IGNORE INTO regions (id, code, name) VALUES
 (1, '01', 'ANDALUCÍA'),

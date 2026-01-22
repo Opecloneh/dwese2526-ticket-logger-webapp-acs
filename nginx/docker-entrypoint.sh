@@ -1,4 +1,5 @@
 #!/bin/sh
+
 # Shebang: indica que este script se debe ejecutar con 'sh' (Bourne shell).
 set -e
 # 'set -e' indica que el script debe terminar inmediatamente si CUALQUIER comando # devuelve un código de salida distinto de 0.
