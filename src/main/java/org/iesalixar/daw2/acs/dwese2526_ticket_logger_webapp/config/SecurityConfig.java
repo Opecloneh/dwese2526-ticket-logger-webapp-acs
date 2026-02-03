@@ -1,5 +1,7 @@
 package org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.config;
 
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.handlers.CustomOAuth2FailureHandler;
+import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.handlers.CustomOAuth2SuccessHandler;
 import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +33,11 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsService customUserDetailService;
 
+    @Autowired
+    private CustomOAuth2FailureHandler customOAuth2FailureHandler;
+
+    @Autowired
+    private CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
@@ -52,7 +59,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     logger.debug("Configurando autorización de solicitudes HTTP");
                     auth
-                            .requestMatchers("/", "/js/**", "/css/**", "/images/**", "/login", "/register").permitAll()        // Acceso anónimo
+                            .requestMatchers("/", "/js/**", "/css/**", "/images/**",
+                                    "/login", "/register", "/auth/**",
+                                    "/error", "/error/**").permitAll()        // Acceso anónimo
                             .requestMatchers("/users**").hasRole("ADMIN")         // Solo ADMIN
                             // REGIONS: ADMIN o MANAGER (para algunas pruebas de permisos)
                             .requestMatchers("/regions**").hasAnyRole("ADMIN", "MANAGER")
@@ -60,13 +69,20 @@ public class SecurityConfig {
                             .requestMatchers("/profile**").hasRole("USER")                    // Solo USER
                             .anyRequest().authenticated();           // Cualquier otra solicitud requiere autenticación
                 })
-                .formLogin(form -> {
-                    logger.debug("Configurando formulario de inicio de sesión");
-                    form
-                            .loginPage("/login")    //Pagina personalizada de login
-                            .defaultSuccessUrl("/") //Redirige al inicio despues del login
-                            .permitAll();           //Permite acceso a la pagina de login a todos los usuarios
-                })
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/", true) // Redirige al inicio después del login exitoso con OAuth2
+                        .permitAll()
+
+                )
+
+                // 🔹 OAUTH2 CON HANDLERS PERSONALIZADOS
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login")
+                        .successHandler(customOAuth2SuccessHandler)
+                        .failureHandler(customOAuth2FailureHandler)
+                )
+
                 .sessionManagement(session -> {
                     logger.debug("Configurando política de gestión de sesiones");
                     // Usa sesiones cuando sea necesario
