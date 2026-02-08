@@ -18,4 +18,6 @@ public interface ProvinceService {
     ProvinceDetailDTO getDetail(Long id);
 
     List<ProvinceDTO> listAll();
+
+    Object listRegionsForSelect();
 }

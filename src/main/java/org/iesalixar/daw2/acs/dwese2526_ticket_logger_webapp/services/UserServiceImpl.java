@@ -15,6 +15,7 @@ import org.iesalixar.daw2.acs.dwese2526_ticket_logger_webapp.repositories.UserRe
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,9 @@ import java.util.Set;
 @Transactional
 public class UserServiceImpl implements UserService{
     private static final int PASSWORD_EXPIRY_DAYS = 90;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Autowired
     private RoleRepository roleRepository;
 
@@ -66,17 +70,19 @@ public class UserServiceImpl implements UserService{
         User user = userRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("user", "id", dto.getId()));
 
-        if (dto.getPasswordHash() != null && !dto.getPasswordHash().isBlank()) {
-            LocalDateTime now = LocalDateTime.now();
-            user.setLastPasswordChange(now);
-            user.setPasswordExpiresAt(now.plusDays(PASSWORD_EXPIRY_DAYS));
-        }
-
         if (roles.size() != dto.getRoleIds().size()) {
             throw new ResourceNotFoundException("role", "ids", dto.getRoleIds());
         }
 
         UserMapper.copyToExistingEntity(dto, user, roles);
+
+        if (dto.getPasswordHash() != null && !dto.getPasswordHash().isBlank()) {
+            LocalDateTime now = LocalDateTime.now();
+            user.setPasswordHash(passwordEncoder.encode(dto.getPasswordHash()));
+            user.setLastPasswordChange(now);
+            user.setPasswordExpiresAt(now.plusDays(PASSWORD_EXPIRY_DAYS));
+        }
+
         userRepository.save(user);
     }
 

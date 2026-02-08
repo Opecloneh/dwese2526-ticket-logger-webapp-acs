@@ -31,7 +31,6 @@ public class UserUpdateDTO {
     @Size(min = 4, max = 100, message = "{msg.user.username.size}")
     private String email;
 
-
     @NotBlank(message = "{msg.user.passwordHash.notblank}")
     @Size(min = 8, max = 500, message = "{msg.user.passwordHash.size}")
     private String passwordHash;

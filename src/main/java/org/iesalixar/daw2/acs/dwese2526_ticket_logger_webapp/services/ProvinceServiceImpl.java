@@ -89,4 +89,9 @@ public class ProvinceServiceImpl implements ProvinceService {
                 .map(ProvinceMapper::toDTO)
                 .toList();
     }
+
+    @Override
+    public Object listRegionsForSelect() {
+        return null;
+    }
 }
